@@ -15,56 +15,45 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.AJA.Interview.Entity.User;
-import com.AJA.Interview.Service.UserService;
+import com.AJA.Interview.Entity.ALTUser;
+import com.AJA.Interview.Service.ALTUserService;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 @RestController
-@RequestMapping("/user")
-public class UserController {
+@RequestMapping("/altUser")
+public class ALTUserController {
 
 	@Autowired
-	private UserService userService;
+	private ALTUserService altUserService;
 	
-	@GetMapping("/get-all-user")
+	@GetMapping("/get-all-altuser")
 	public MappingJacksonValue getall(){
-		 List<User> user=userService.getALL();
+		 List<ALTUser> user=altUserService.getALL();
 		 MappingJacksonValue jacksonValue=new MappingJacksonValue(user);
-		 SimpleBeanPropertyFilter filter=SimpleBeanPropertyFilter.filterOutAllExcept("id","name","empid","email","batch","technology");
-		 FilterProvider filters=new SimpleFilterProvider().addFilter("User", filter);
+		 SimpleBeanPropertyFilter filter=SimpleBeanPropertyFilter.filterOutAllExcept("id","name","email","phone","role");
+		 FilterProvider filters=new SimpleFilterProvider().addFilter("ALTUser", filter);
 		 jacksonValue.setFilters(filters);
 		 return jacksonValue;
 	}
 	
-	@GetMapping("/get-by-id/{id}")
+	@GetMapping("/get-by-altid/{id}")
 	public MappingJacksonValue getbyid(@PathVariable Long id) {
-		User user=userService.getbyId(id);
-		MappingJacksonValue jacksonValue=new MappingJacksonValue(user);
-		 SimpleBeanPropertyFilter filter=SimpleBeanPropertyFilter.filterOutAllExcept("id","name","empid","email","batch","technology");
-		 FilterProvider filters=new SimpleFilterProvider().addFilter("User", filter);
+		ALTUser altUser=altUserService.getbyId(id);
+		MappingJacksonValue jacksonValue=new MappingJacksonValue(altUser);
+		 SimpleBeanPropertyFilter filter=SimpleBeanPropertyFilter.filterOutAllExcept("id","name","email","phone","role");
+		 FilterProvider filters=new SimpleFilterProvider().addFilter("ALTUser", filter);
 		 jacksonValue.setFilters(filters);
 		return jacksonValue;
 	}
-	
-	@GetMapping("/get-by-technonlogy")
-	public MappingJacksonValue getbytechnology(@RequestParam String tec){
-		List<User> user= userService.gettech(tec);
-		MappingJacksonValue jacksonValue=new MappingJacksonValue(user);
-		 SimpleBeanPropertyFilter filter=SimpleBeanPropertyFilter.filterOutAllExcept("id","name","empid","email","batch","technology");
-		 FilterProvider filters=new SimpleFilterProvider().addFilter("User", filter);
-		 jacksonValue.setFilters(filters);
-		 return jacksonValue;
-	}
-	
-	 @PostMapping("/create-user")
-	    public ResponseEntity<Map<String, String>> registerUser(@RequestBody User user) {
+		
+	 @PostMapping("/create-altUser")
+	    public ResponseEntity<Map<String, String>> registerUser(@RequestBody ALTUser altUser) {
 	        try {
-	            Map<String, String> response = userService.createUserAndReturnToken(user);
+	            Map<String, String> response = altUserService.createUserAndReturnToken(altUser);
 	            return ResponseEntity.ok(response);
 	        } catch (Exception e) {
 	            Map<String, String> error = new HashMap<>();
@@ -73,11 +62,11 @@ public class UserController {
 	        }
 	    }
 
-	@PutMapping("/update-user")
-	public ResponseEntity<String> updateUser(@PathVariable Long id,@RequestBody User user){
+	@PutMapping("/update-altUser/{id}")
+	public ResponseEntity<String> updateUser(@PathVariable Long id,@RequestBody ALTUser altUser){
 		try {
-			userService.updateUser(user,id);
-			return ResponseEntity.ok("User Updated successfully");
+			altUserService.updateAltUser(altUser,id);
+			return ResponseEntity.ok("ALTUser Updated successfully");
 		} catch (Exception e) {
 			
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -85,14 +74,14 @@ public class UserController {
 		}
 	}
 	
-	@DeleteMapping("/delete-user")
+	@DeleteMapping("/delete-altUser")
 	public void deleteUser(@PathVariable Long id) {
-		userService.deleteUser(id);
+		altUserService.deleteAltUser(id);
 	}
 	
 	@PostMapping("/login")
-	public Map<String, String> login(@RequestBody User user) {
-		return userService.verify(user);
+	public Map<String, String> login(@RequestBody ALTUser altUser) {
+		return altUserService.verify(altUser);
 	}
 
 }
