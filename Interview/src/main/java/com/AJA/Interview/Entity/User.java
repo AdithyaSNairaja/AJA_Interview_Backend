@@ -1,5 +1,7 @@
 package com.AJA.Interview.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonFilter("User")
 public class User {
 @Id
 @GeneratedValue(strategy = GenerationType.IDENTITY)

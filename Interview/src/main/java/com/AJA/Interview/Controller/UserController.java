@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,10 +15,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.AJA.Interview.Entity.User;
 import com.AJA.Interview.Service.UserService;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 @RestController
 @RequestMapping("/user")
@@ -27,13 +32,33 @@ public class UserController {
 	private UserService userService;
 	
 	@GetMapping("/get-all-user")
-	public List<User> getall(){
-		return userService.getALL();
+	public MappingJacksonValue getall(){
+		 List<User> user=userService.getALL();
+		 MappingJacksonValue jacksonValue=new MappingJacksonValue(user);
+		 SimpleBeanPropertyFilter filter=SimpleBeanPropertyFilter.filterOutAllExcept("id","name","empid","email","batch","technology");
+		 FilterProvider filters=new SimpleFilterProvider().addFilter("User", filter);
+		 jacksonValue.setFilters(filters);
+		 return jacksonValue;
 	}
 	
 	@GetMapping("/get-by-id/{id}")
-	public User getbyid(@PathVariable Long id) {
-		return userService.getbyId(id);
+	public MappingJacksonValue getbyid(@PathVariable Long id) {
+		User user=userService.getbyId(id);
+		MappingJacksonValue jacksonValue=new MappingJacksonValue(user);
+		 SimpleBeanPropertyFilter filter=SimpleBeanPropertyFilter.filterOutAllExcept("id","name","empid","email","batch","technology");
+		 FilterProvider filters=new SimpleFilterProvider().addFilter("User", filter);
+		 jacksonValue.setFilters(filters);
+		return jacksonValue;
+	}
+	
+	@GetMapping("/get-by-technonlogy")
+	public MappingJacksonValue getbytechnology(@RequestParam String tec){
+		List<User> user= userService.gettech(tec);
+		MappingJacksonValue jacksonValue=new MappingJacksonValue(user);
+		 SimpleBeanPropertyFilter filter=SimpleBeanPropertyFilter.filterOutAllExcept("id","name","empid","email","batch","technology");
+		 FilterProvider filters=new SimpleFilterProvider().addFilter("User", filter);
+		 jacksonValue.setFilters(filters);
+		 return jacksonValue;
 	}
 	
 	 @PostMapping("/create-user")

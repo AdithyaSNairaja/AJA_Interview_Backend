@@ -75,6 +75,10 @@ public class UserService {
 		userRepository.save(users);
 	}
 	
+	public List<User> gettech(String tec){
+		return userRepository.findByTechnology(tec);
+	}
+	
 	public void deleteUser(Long id) {
 		userRepository.deleteById(id);
 	}
