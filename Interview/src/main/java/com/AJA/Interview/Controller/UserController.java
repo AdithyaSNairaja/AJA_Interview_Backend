@@ -1,6 +1,6 @@
 package com.AJA.Interview.Controller;
 
-import java.util.HashMap;
+import java.util.HashMap; 
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.AJA.Interview.Entity.User;
 import com.AJA.Interview.Service.UserService;
@@ -94,5 +95,41 @@ public class UserController {
 	public Map<String, String> login(@RequestBody User user) {
 		return userService.verify(user);
 	}
+	
+	@PostMapping("/{userId}/upload")
+	public ResponseEntity<String> uploadSingleFile(@PathVariable Long userId,
+	                                               @RequestParam("file") MultipartFile[] file) {
+	    if (file == null || file.length == 0) {
+	        return ResponseEntity.badRequest().body("No file provided.");
+	    }
+
+	    if (file.length > 1) {
+	        return ResponseEntity.badRequest().body("Only one file can be uploaded per request.");
+	    }
+
+	    return userService.uploadFile(userId, file[0]);
+	}
+	
+	@DeleteMapping("/{userId}/delete-file")
+	public ResponseEntity<?> deleteFile(@PathVariable Long userId,
+	                                        @RequestParam("fileNumber") int fileNumber) {
+	return userService.deleteFile(userId, fileNumber);
+	}
+
+	@PutMapping("/{userId}/update-file")
+	public ResponseEntity<String> updateFile(@PathVariable Long userId,
+			 								@RequestParam("fileNumber") int fileNumber,
+	                                         @RequestParam("file") MultipartFile[] file) {
+	    if (file == null || file.length == 0) {
+	        return ResponseEntity.badRequest().body("No file provided.");
+	    }
+
+	    if (file.length > 1) {
+	        return ResponseEntity.badRequest().body("Only one file can be updated per request.");
+	    }
+
+	    return userService.replaceFile(userId, fileNumber, file[0]);
+	}
+
 
 }

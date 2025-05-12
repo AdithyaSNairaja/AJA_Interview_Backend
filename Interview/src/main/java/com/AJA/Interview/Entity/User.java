@@ -30,6 +30,10 @@ private String email;
 @Column(nullable = false)
 private String password;
 
+private String fileUrl1;
+
+private String fileUrl2;
+
 private Batch batch;
 
 private String technology;
