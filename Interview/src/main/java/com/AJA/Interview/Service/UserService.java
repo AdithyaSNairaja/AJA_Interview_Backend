@@ -207,5 +207,28 @@ public class UserService {
 		userRepository.save(user);
 		return ResponseEntity.ok("File replaced successfully.");
 	}
+	
+	public ResponseEntity<?> downloadFileByNumber(Long userId, int fileNumber) {
+	    Optional<User> optionalUser = userRepository.findById(userId);
+	    if (optionalUser.isEmpty()) {
+	        return ResponseEntity.badRequest().body("User not found.");
+	    }
 
+	    User user = optionalUser.get();
+	    String fileKey;
+
+	    if (fileNumber == 1) {
+	        fileKey = user.getFileUrl1();
+	    } else if (fileNumber == 2) {
+	        fileKey = user.getFileUrl2();
+	    } else {
+	        return ResponseEntity.badRequest().body("Invalid file number. Only 1 or 2 allowed.");
+	    }
+
+	    if (fileKey == null || fileKey.isEmpty()) {
+	        return ResponseEntity.status(404).body("Requested file not found for this user.");
+	    }
+
+	    return storageService.downloadFile(fileKey);
+	}
 }

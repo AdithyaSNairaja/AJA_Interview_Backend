@@ -131,5 +131,11 @@ public class UserController {
 	    return userService.replaceFile(userId, fileNumber, file[0]);
 	}
 
+	@GetMapping("/{userId}/file/download")
+	public ResponseEntity<?> downloadFile(@PathVariable Long userId,
+	                                      @RequestParam("fileNumber") int fileNumber) {
+	    return userService.downloadFileByNumber(userId, fileNumber);
+	}
+
 
 }
