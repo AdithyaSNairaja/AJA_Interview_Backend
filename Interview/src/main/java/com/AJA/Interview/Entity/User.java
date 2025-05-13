@@ -42,4 +42,5 @@ private String technology;
 public enum Batch{
 	TCT1,TCT2,TCT3,OM
 }
+
 }

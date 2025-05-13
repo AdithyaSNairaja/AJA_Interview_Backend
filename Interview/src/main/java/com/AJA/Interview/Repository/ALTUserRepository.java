@@ -8,4 +8,7 @@ import com.AJA.Interview.Entity.ALTUser;
 @Repository
 public interface ALTUserRepository extends JpaRepository<ALTUser, Long>{
 	ALTUser findByEmail(String email);
+	boolean existsByEmail(String email);
+	boolean existsByPhone(String phone);
+
 }

@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.AJA.Interview.Entity.ALTUser;
 import com.AJA.Interview.Service.ALTUserService;
@@ -83,5 +85,18 @@ public class ALTUserController {
 	public Map<String, String> login(@RequestBody ALTUser altUser) {
 		return altUserService.verify(altUser);
 	}
+	
+	@PostMapping("/{altUserId}/upload")
+	public ResponseEntity<String> uploadSingleFile(@PathVariable Long altUserId,
+	                                               @RequestParam("file") MultipartFile[] file) {
+	    if (file == null || file.length == 0) {
+	        return ResponseEntity.badRequest().body("No file provided.");
+	    }
 
+	    if (file.length > 1) {
+	        return ResponseEntity.badRequest().body("Only one file can be uploaded per request.");
+	    }
+
+	    return altUserService.uploadFile(altUserId, file[0]);
+	}
 }
