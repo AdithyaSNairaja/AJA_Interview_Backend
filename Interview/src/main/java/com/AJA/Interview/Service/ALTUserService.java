@@ -43,8 +43,6 @@ public class ALTUserService {
 			return user;
 		}
 		
-		
-//		}
 
 		public Map<String, String> createUserAndReturnToken(ALTUser altUser) {
 	        // Check if email or phone already exists
