@@ -6,7 +6,9 @@ import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -14,8 +16,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,6 +57,11 @@ public class StorageService {
 	    amazonS3.deleteObject(bucketName, fileName);
 	}
 	
+	public void deleteFiles(String fileKey) {
+	    amazonS3.deleteObject(bucketName, fileKey);
+	}
+
+	
 	public ResponseEntity<?> downloadFile(String fileKey) {
         try {
             // If a full URL is passed, extract just the file name (S3 key)
@@ -70,5 +79,21 @@ public class StorageService {
             return ResponseEntity.status(500).body("Error downloading file from S3: " + e.getMessage());
         }
     }
+	
+	public ResponseEntity<Resource> downloadFiles(String fileKey) {
+	    try {
+	        S3Object s3Object = amazonS3.getObject(bucketName, fileKey);
+	        S3ObjectInputStream inputStream = s3Object.getObjectContent();
+	        Resource resource = new InputStreamResource(inputStream);
+
+	        return ResponseEntity.ok()
+	                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileKey + "\"")
+	                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+	                .body(resource);
+	    } catch (AmazonS3Exception e) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+	    }
+	}
+
 
 }

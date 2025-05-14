@@ -1,5 +1,6 @@
 package com.AJA.Interview.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,9 +9,6 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -115,27 +113,104 @@ public class ALTUserService {
 		}
 
 		
-		public ResponseEntity<String> uploadFile(Long altUserId, MultipartFile file) {
-			if (file == null || file.isEmpty()) {
-	            return ResponseEntity.badRequest().body("Please upload a valid file.");
-	        }
+		public ResponseEntity<String> uploadFiles(Long altUserId, MultipartFile[] files) {
+		    if (files == null || files.length == 0) {
+		        return ResponseEntity.badRequest().body("No files provided.");
+		    }
 
-			Optional<ALTUser> optionalUser = altUserRepository.findById(altUserId);
-			if (optionalUser.isEmpty()) {
-				return ResponseEntity.badRequest().body("User not found.");
-			}
+		    Optional<ALTUser> optionalUser = altUserRepository.findById(altUserId);
+		    if (optionalUser.isEmpty()) {
+		        return ResponseEntity.badRequest().body("User not found.");
+		    }
 
-			ALTUser altUser = optionalUser.get();
+		    ALTUser altUser = optionalUser.get();
 
-			boolean hasFile1 = altUser.getJD() != null && !altUser.getJD().isEmpty();
+		    List<String> uploadedUrls = new ArrayList<>();
+		    for (MultipartFile file : files) {
+		        if (file != null && !file.isEmpty()) {
+		            String uploadedUrl = storageService.uploadFile(file);
+		            uploadedUrls.add(uploadedUrl);
+		        }
+		    }
 
+		    // Add to existing list
+		    altUser.getJdFiles().addAll(uploadedUrls);
+		    altUserRepository.save(altUser);
 
-			String uploadedUrl = storageService.uploadFile(file);
-		
-			altUser.setJD(uploadedUrl);
-			
-
-			altUserRepository.save(altUser);
-			return ResponseEntity.ok("File uploaded successfully: " + uploadedUrl);
+		    return ResponseEntity.ok("Files uploaded successfully: " + uploadedUrls);
 		}
+		
+		public ResponseEntity<?> downloadFilesByUserId(Long userId) {
+		    Optional<ALTUser> optionalUser = altUserRepository.findById(userId);
+		    if (optionalUser.isEmpty()) {
+		        return ResponseEntity.badRequest().body("User not found.");
+		    }
+
+		    ALTUser user = optionalUser.get();
+		    List<String> fileKeys = user.getJdFiles();
+
+		    if (fileKeys == null || fileKeys.isEmpty()) {
+		        return ResponseEntity.status(404).body("No files found for this user.");
+		    }
+
+		    return ResponseEntity.ok(fileKeys); // or stream/download all if required
+		}
+	
+		public ResponseEntity<?> downloadFileByIndex(Long userId, int index) {
+		    Optional<ALTUser> optionalUser = altUserRepository.findById(userId);
+		    if (optionalUser.isEmpty()) {
+		        return ResponseEntity.badRequest().body("User not found.");
+		    }
+
+		    ALTUser user = optionalUser.get();
+		    
+		    List<String> fileKeys = user.getJdFiles();
+
+		    if (fileKeys == null || fileKeys.isEmpty()) {
+		        return ResponseEntity.status(404).body("No files found.");
+		    }
+
+		    if (index < 0 || index >= fileKeys.size()) {
+		        return ResponseEntity.status(400).body("Invalid file index.");
+		    }
+		    
+		    String fileKey = fileKeys.get(index);
+		    System.out.println("Downloading file with key: " + fileKey);
+		    return storageService.downloadFiles(fileKey);  // This should return ResponseEntity with file stream
+		}
+
+		public ResponseEntity<String> deleteFileByIndex(Long userId, int index) {
+		    Optional<ALTUser> optionalUser = altUserRepository.findById(userId);
+		    if (optionalUser.isEmpty()) {
+		        return ResponseEntity.badRequest().body("User not found.");
+		    }
+
+		    ALTUser user = optionalUser.get();
+		    List<String> fileKeys = user.getJdFiles();
+
+		    if (fileKeys == null || fileKeys.isEmpty()) {
+		        return ResponseEntity.status(404).body("No files found.");
+		    }
+
+		    if (index < 0 || index >= fileKeys.size()) {
+		        return ResponseEntity.status(400).body("Invalid file index.");
+		    }
+
+		    String fileKey = fileKeys.get(index);
+
+		    // Remove from S3 or other storage
+		    try {
+		        storageService.deleteFile(fileKey);  // Assumes you have this method in your service
+		    } catch (Exception e) {
+		        return ResponseEntity.status(500).body("Failed to delete file from storage: " + e.getMessage());
+		    }
+
+		    // Remove from list and save user
+		    fileKeys.remove(index);
+		    user.setJdFiles(fileKeys);
+		    altUserRepository.save(user);
+
+		    return ResponseEntity.ok("File deleted successfully.");
+		}
+
 }

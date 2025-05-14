@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -39,6 +40,9 @@ private String phone;
 
 private String role;
 
-private String JD;
+//private String JD;
+
+@ElementCollection
+private List<String> jdFiles = new ArrayList<>();
 
 }

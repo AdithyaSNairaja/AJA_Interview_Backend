@@ -87,16 +87,26 @@ public class ALTUserController {
 	}
 	
 	@PostMapping("/{altUserId}/upload")
-	public ResponseEntity<String> uploadSingleFile(@PathVariable Long altUserId,
-	                                               @RequestParam("file") MultipartFile[] file) {
-	    if (file == null || file.length == 0) {
-	        return ResponseEntity.badRequest().body("No file provided.");
-	    }
-
-	    if (file.length > 1) {
-	        return ResponseEntity.badRequest().body("Only one file can be uploaded per request.");
-	    }
-
-	    return altUserService.uploadFile(altUserId, file[0]);
+	public ResponseEntity<String> uploadMultipleFiles(@PathVariable Long altUserId,
+	                                                  @RequestParam("file") MultipartFile[] files) {
+	    return altUserService.uploadFiles(altUserId, files);
 	}
+	
+	@GetMapping("/{altUserId}/files/download")
+	public ResponseEntity<?> downloadAllFiles(@PathVariable Long altUserId) {
+	    return altUserService.downloadFilesByUserId(altUserId);
+	}
+	
+	@GetMapping("/{altUserId}/file/download/{index}")
+	public ResponseEntity<?> downloadSingleFile(@PathVariable Long altUserId, @PathVariable int index) {
+	    return altUserService.downloadFileByIndex(altUserId, index);
+	}
+	
+	@DeleteMapping("/{altUserId}/files/{index}")
+	public ResponseEntity<String> deleteUserFile(
+	        @PathVariable Long altUserId,
+	        @PathVariable int index) {
+	    return altUserService.deleteFileByIndex(altUserId, index);
+	}
+
 }
