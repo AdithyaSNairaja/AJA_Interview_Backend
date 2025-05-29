@@ -1,5 +1,9 @@
 package com.example.DeliveryTeamDashboard.Service;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -72,23 +76,78 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
     }
 
-    public User register(String name, String email, String password, String role) {
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Email already exists: " + email);
+    public User register(String fullName, String empId, String email, String password, String role, String technology, String resourceType) {
+        // Validate mandatory fields
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Full name cannot be null or empty");
+        }
+        if (empId == null || empId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Employee ID cannot be null or empty");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            throw new IllegalArgumentException("Password cannot be null or empty");
+        }
+        if (role == null || role.trim().isEmpty()) {
+            throw new IllegalArgumentException("Role cannot be null or empty");
         }
 
+        // Validate role
+        String normalizedRole = role.trim().toLowerCase();
+        String roleEnum;
+        switch (normalizedRole) {
+            case "employee":
+                roleEnum = "ROLE_EMPLOYEE";
+                break;
+            case "sales-team":
+                roleEnum = "ROLE_SALES_TEAM";
+                break;
+            case "delivery_team":
+                roleEnum = "ROLE_DELIVERY_TEAM";
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid role. Must be 'employee', 'sales-team', or 'delivery_team'");
+        }
+
+        // Check uniqueness
+        if (userRepository.existsByEmail(email.trim())) {
+            throw new IllegalArgumentException("Email '" + email + "' is already in use");
+        }
+        if (employeeRepository.existsByEmpId(empId.trim())) {
+            throw new IllegalArgumentException("Employee ID '" + empId + "' is already in use");
+        }
+
+        // Validate employee-specific fields
+        if (normalizedRole.equals("employee")) {
+            if (technology == null || technology.trim().isEmpty()) {
+                throw new IllegalArgumentException("Technology is required for employee role");
+            }
+            if (resourceType == null || resourceType.trim().isEmpty()) {
+                throw new IllegalArgumentException("Resource type is required for employee role");
+            }
+            Set<String> validResourceTypes = new HashSet<>(Arrays.asList("OM", "TCT1", "TCT2"));
+            if (!validResourceTypes.contains(resourceType.trim())) {
+                throw new IllegalArgumentException("Resource type must be 'OM', 'TCT1', or 'TCT2'");
+            }
+        }
+
+        // Create User
         User user = new User();
-        user.setName(name);
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setRole(role.toLowerCase());
+        user.setFullName(fullName.trim());
+        user.setEmail(email.trim());
+        user.setPassword(passwordEncoder.encode(password.trim()));
+        user.setRole(roleEnum);
         User savedUser = userRepository.save(user);
 
-        if ("employee".equalsIgnoreCase(role)) {
+        // Create Employee for employee role
+        if (normalizedRole.equals("employee")) {
             Employee employee = new Employee();
             employee.setUser(savedUser);
-            employee.setTechnology("Unknown");
-            employee.setResourceType("Unknown");
+            employee.setEmpId(empId.trim());
+            employee.setTechnology(technology.trim());
+            employee.setResourceType(resourceType.trim());
             employee.setLevel("Unknown");
             employee.setStatus("Active");
             employeeRepository.save(employee);

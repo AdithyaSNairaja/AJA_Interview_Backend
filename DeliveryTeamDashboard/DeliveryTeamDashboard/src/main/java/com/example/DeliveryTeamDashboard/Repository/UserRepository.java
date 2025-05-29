@@ -10,4 +10,5 @@ import com.example.DeliveryTeamDashboard.Entity.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
 }

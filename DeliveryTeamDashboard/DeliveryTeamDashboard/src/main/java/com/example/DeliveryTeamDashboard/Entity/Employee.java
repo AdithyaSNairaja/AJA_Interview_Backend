@@ -8,11 +8,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
 
+
 @Entity
-@Table(name = "employees")
+@Table(name = "employee", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "emp_id", name = "uk_employee_empid")
+})
 @Data
 public class Employee {
     @Id
@@ -23,15 +27,18 @@ public class Employee {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "emp_id", nullable = false, length = 20)
+    private String empId;
+
+    @Column(length = 50)
     private String technology;
 
-    @Column(name = "resource_type", nullable = false, length = 50)
+    @Column(name = "resource_type", length = 10)
     private String resourceType;
 
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     private String level;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String status;
 }

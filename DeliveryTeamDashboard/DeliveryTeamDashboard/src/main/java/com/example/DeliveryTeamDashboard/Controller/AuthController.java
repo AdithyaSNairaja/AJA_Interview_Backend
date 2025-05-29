@@ -1,5 +1,6 @@
 package com.example.DeliveryTeamDashboard.Controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,15 +19,21 @@ public class AuthController {
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
-
     @PostMapping("/register")
-    public ResponseEntity<User> register(
-            @RequestParam String name,
+    public ResponseEntity<?> register(
+            @RequestParam String fullName,
+            @RequestParam String empId,
             @RequestParam String email,
             @RequestParam String password,
-            @RequestParam String role) {
-        User user = authService.register(name, email, password, role);
-        return ResponseEntity.ok(user);
+            @RequestParam String role,
+            @RequestParam(required = false) String technology,
+            @RequestParam(required = false) String resourceType) {
+        try {
+            User user = authService.register(fullName, empId, email, password, role, technology, resourceType);
+            return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @PostMapping("/login")
