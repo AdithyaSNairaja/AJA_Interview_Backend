@@ -41,69 +41,69 @@ public class EmployeeController {
          this.employeeRepository = employeeRepository;
      }
 
-     @GetMapping("/me")
-     public ResponseEntity<Employee> getEmployeeDetails(Authentication authentication) {
-         if (authentication == null || !authentication.isAuthenticated()) {
-             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-         }
-         String email = authentication.getName();
-         return employeeRepository.findByUserEmail(email)
-                 .map(ResponseEntity::ok)
-                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
-     }
-
-     @PutMapping("/me")
-     public ResponseEntity<Employee> updateEmployeeDetails(
-             Authentication authentication,
-             @RequestParam(required = false) String technology,
-             @RequestParam(required = false) String empId) {
-         if (authentication == null || !authentication.isAuthenticated()) {
-             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
-         }
-         String email = authentication.getName();
-         return employeeRepository.findByUserEmail(email)
-                 .map(employee -> {
-                     Employee updatedEmployee = employeeService.updateEmployeeDetails(
-                             employee.getId(), technology, empId);
-                     return ResponseEntity.ok(updatedEmployee);
-                 })
-                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
-     }
-
-     @GetMapping("/job-descriptions")
-     public ResponseEntity<List<JobDescription>> getJobDescriptions(
-             @RequestParam(required = false) String search,
-             @RequestParam(defaultValue = "all") String technology,
-             @RequestParam(defaultValue = "all") String resourceType) {
-         List<JobDescription> jobDescriptions = employeeService.getJobDescriptions(search, technology, resourceType);
-         return ResponseEntity.ok(jobDescriptions);
-     }
-
-     @PostMapping("/resumes")
-     public ResponseEntity<Resume> uploadResume(
-             @RequestParam("employeeId") Long employeeId,
-             @RequestParam("jdId") Long jdId,
-             @RequestParam("file") MultipartFile file) throws IOException {
-         Resume resume = employeeService.uploadResume(employeeId, jdId, file);
-         return ResponseEntity.status(HttpStatus.CREATED).body(resume);
-     }
-
-     @GetMapping("/resumes/{resumeId}/download")
-     public ResponseEntity<Resource> downloadResume(@PathVariable Long resumeId) throws IOException {
-         byte[] fileData = employeeService.downloadResume(resumeId);
-         ByteArrayResource resource = new ByteArrayResource(fileData);
-         return ResponseEntity.ok()
-                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=resume.pdf")
-                 .contentType(MediaType.APPLICATION_PDF)
-                 .contentLength(fileData.length)
-                 .body(resource);
-     }
-
-     @DeleteMapping("/resumes/{resumeId}")
-     public ResponseEntity<Void> deleteResume(@PathVariable Long resumeId) {
-         employeeService.deleteResume(resumeId);
-         return ResponseEntity.noContent().build();
-     }
+//     @GetMapping("/me")
+//     public ResponseEntity<Employee> getEmployeeDetails(Authentication authentication) {
+//         if (authentication == null || !authentication.isAuthenticated()) {
+//             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+//         }
+//         String email = authentication.getName();
+//         return employeeRepository.findByUserEmail(email)
+//                 .map(ResponseEntity::ok)
+//                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+//     }
+//
+//     @PutMapping("/me")
+//     public ResponseEntity<Employee> updateEmployeeDetails(
+//             Authentication authentication,
+//             @RequestParam(required = false) String technology,
+//             @RequestParam(required = false) String empId) {
+//         if (authentication == null || !authentication.isAuthenticated()) {
+//             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+//         }
+//         String email = authentication.getName();
+//         return employeeRepository.findByUserEmail(email)
+//                 .map(employee -> {
+//                     Employee updatedEmployee = employeeService.updateEmployeeDetails(
+//                             employee.getId(), technology, empId);
+//                     return ResponseEntity.ok(updatedEmployee);
+//                 })
+//                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+//     }
+//
+//     @GetMapping("/job-descriptions")
+//     public ResponseEntity<List<JobDescription>> getJobDescriptions(
+//             @RequestParam(required = false) String search,
+//             @RequestParam(defaultValue = "all") String technology,
+//             @RequestParam(defaultValue = "all") String resourceType) {
+//         List<JobDescription> jobDescriptions = employeeService.getJobDescriptions(search, technology, resourceType);
+//         return ResponseEntity.ok(jobDescriptions);
+//     }
+//
+//     @PostMapping("/resumes")
+//     public ResponseEntity<Resume> uploadResume(
+//             @RequestParam("employeeId") Long employeeId,
+//             @RequestParam("jdId") Long jdId,
+//             @RequestParam("file") MultipartFile file) throws IOException {
+//         Resume resume = employeeService.uploadResume(employeeId, jdId, file);
+//         return ResponseEntity.status(HttpStatus.CREATED).body(resume);
+//     }
+//
+//     @GetMapping("/resumes/{resumeId}/download")
+//     public ResponseEntity<Resource> downloadResume(@PathVariable Long resumeId) throws IOException {
+//         byte[] fileData = employeeService.downloadResume(resumeId);
+//         ByteArrayResource resource = new ByteArrayResource(fileData);
+//         return ResponseEntity.ok()
+//                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=resume.pdf")
+//                 .contentType(MediaType.APPLICATION_PDF)
+//                 .contentLength(fileData.length)
+//                 .body(resource);
+//     }
+//
+//     @DeleteMapping("/resumes/{resumeId}")
+//     public ResponseEntity<Void> deleteResume(@PathVariable Long resumeId) {
+//         employeeService.deleteResume(resumeId);
+//         return ResponseEntity.noContent().build();
+//     }
 
      @GetMapping("/mock-interviews")
      public ResponseEntity<List<MockInterview>> getMockInterviews(
@@ -122,20 +122,110 @@ public class EmployeeController {
          List<ClientInterview> interviews = employeeService.getClientInterviews(employeeId, technology, resourceType);
          return ResponseEntity.ok(interviews);
      }
+//
+//     @PostMapping("/interview-questions")
+//     public ResponseEntity<InterviewQuestion> addInterviewQuestion(
+//             @RequestParam String technology,
+//             @RequestParam String question,
+//             @RequestParam String user) {
+//         InterviewQuestion interviewQuestion = employeeService.addInterviewQuestion(technology, question, user);
+//         return ResponseEntity.status(HttpStatus.CREATED).body(interviewQuestion);
+//     }
+//
+//     @GetMapping("/interview-questions")
+//     public ResponseEntity<List<InterviewQuestion>> getInterviewQuestions(
+//             @RequestParam(defaultValue = "all") String technology) {
+//         List<InterviewQuestion> questions = employeeService.getInterviewQuestions(technology);
+//         return ResponseEntity.ok(questions);
+//     }
+     
+     @PutMapping("/me")
+     public ResponseEntity<?> updateEmployeeDetails(
+             Authentication authentication,
+             @RequestParam Long employeeId,
+             @RequestParam(required = false) String technology,
+             @RequestParam(required = false) String empId) {
+         if (authentication == null || !authentication.isAuthenticated()) {
+             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+         }
+         try {
+             Employee employee = employeeService.updateEmployeeDetails(employeeId, technology, empId);
+             return ResponseEntity.ok(employee);
+         } catch (IllegalArgumentException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
+     }
+
+     @GetMapping("/job-descriptions")
+     public List<JobDescription> getJobDescriptions(
+             @RequestParam(required = false) String search,
+             @RequestParam(required = false) String technology,
+             @RequestParam(required = false) String resourceType) {
+         return employeeService.getJobDescriptions(search, technology, resourceType);
+     }
+
+     @PostMapping("/resumes")
+     public ResponseEntity<?> uploadResume(
+             Authentication authentication,
+             @RequestParam Long employeeId,
+             @RequestParam Long jdId,
+             @RequestParam MultipartFile file) throws IOException {
+         if (authentication == null || !authentication.isAuthenticated()) {
+             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+         }
+         try {
+             Resume resume = employeeService.uploadResume(employeeId, jdId, file);
+             return ResponseEntity.status(HttpStatus.CREATED).body(resume);
+         } catch (IllegalArgumentException | IOException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
+     }
+
+     @GetMapping("/resumes/{resumeId}/download")
+     public ResponseEntity<?> downloadResume(@PathVariable Long resumeId) throws IOException {
+         try {
+             byte[] fileData = employeeService.downloadResume(resumeId);
+             ByteArrayResource resource = new ByteArrayResource(fileData);
+             return ResponseEntity.ok()
+                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=resume.pdf")
+                     .contentType(MediaType.APPLICATION_PDF)
+                     .contentLength(fileData.length)
+                     .body(resource);
+         } catch (IllegalArgumentException | IOException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
+     }
+
+     @DeleteMapping("/resumes/{resumeId}")
+     public ResponseEntity<?> deleteResume(@PathVariable Long resumeId) {
+         try {
+             employeeService.deleteResume(resumeId);
+             return ResponseEntity.ok().build();
+         } catch (IllegalArgumentException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
+     }
 
      @PostMapping("/interview-questions")
-     public ResponseEntity<InterviewQuestion> addInterviewQuestion(
+     public ResponseEntity<?> addInterviewQuestion(
+             Authentication authentication,
              @RequestParam String technology,
              @RequestParam String question,
              @RequestParam String user) {
-         InterviewQuestion interviewQuestion = employeeService.addInterviewQuestion(technology, question, user);
-         return ResponseEntity.status(HttpStatus.CREATED).body(interviewQuestion);
+         if (authentication == null || !authentication.isAuthenticated()) {
+             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+         }
+         try {
+             InterviewQuestion interviewQuestion = employeeService.addInterviewQuestion(technology, question, user);
+             return ResponseEntity.status(HttpStatus.CREATED).body(interviewQuestion);
+         } catch (IllegalArgumentException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
      }
 
      @GetMapping("/interview-questions")
-     public ResponseEntity<List<InterviewQuestion>> getInterviewQuestions(
+     public List<InterviewQuestion> getInterviewQuestions(
              @RequestParam(defaultValue = "all") String technology) {
-         List<InterviewQuestion> questions = employeeService.getInterviewQuestions(technology);
-         return ResponseEntity.ok(questions);
-     }  
+         return employeeService.getInterviewQuestions(technology);
+     }
     }

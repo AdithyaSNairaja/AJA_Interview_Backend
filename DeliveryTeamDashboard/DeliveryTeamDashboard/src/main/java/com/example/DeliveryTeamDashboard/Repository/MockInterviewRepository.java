@@ -10,5 +10,5 @@ import com.example.DeliveryTeamDashboard.Entity.MockInterview;
 @Repository
 public interface MockInterviewRepository extends JpaRepository<MockInterview, Long> {
     List<MockInterview> findByEmployeeId(Long employeeId);
-    List<MockInterview> findByStatus(String status);
+    List<MockInterview> findByStatus(String status);//
 }

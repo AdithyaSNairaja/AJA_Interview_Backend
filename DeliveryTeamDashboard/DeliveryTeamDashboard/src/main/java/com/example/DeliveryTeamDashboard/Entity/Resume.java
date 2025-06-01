@@ -1,5 +1,6 @@
 package com.example.DeliveryTeamDashboard.Entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,18 +14,21 @@ import lombok.Data;
 @Table(name = "resumes")
 @Data
 public class Resume {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	 	@Id
+	    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "employee_id")
-    private Employee employee;
+	    @ManyToOne
+	    @JoinColumn(name = "employee_id", nullable = false)
+	    private Employee employee;
 
-    @ManyToOne
-    @JoinColumn(name = "job_description_id")
-    private JobDescription jobDescription;
+	    @ManyToOne
+	    @JoinColumn(name = "job_description_id", nullable = false)
+	    private JobDescription jobDescription;
 
-    private String s3Key; // S3 key for the resume file
-    private String status; // pending, submitted, rejected
+	    @Column(name = "s3_key")
+	    private String s3Key; // S3 key for the resume file
+	    
+	    @Column(length = 50)
+	    private String status; // pending, submitted, rejected
 }

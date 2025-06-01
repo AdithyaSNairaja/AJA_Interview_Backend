@@ -1,7 +1,9 @@
 package com.example.DeliveryTeamDashboard.Entity;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -15,22 +17,43 @@ import lombok.Data;
 @Table(name = "client_interviews")
 @Data
 public class ClientInterview {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	 	@Id
+	    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "employee_id")
-    private Employee employee;
+	    @ManyToOne
+	    @JoinColumn(name = "employee_id", nullable = false)
+	    private Employee employee;
 
-    private String client;
-    private LocalDate date;
-    private Integer level;
-    private String status;
-    private String jobDescriptionTitle;
-    private String meetingLink;
-    private String result;
-    private String feedback;
-    private Integer technicalScore;
-    private Integer communicationScore;
-}
+	    @Column(length = 100)
+	    private String client;
+
+	    @Column(nullable = false)
+	    private LocalDate date;
+
+	    @Column(nullable = false)
+	    private LocalTime time;
+
+	    @Column
+	    private Integer level;
+
+	    @Column(name = "job_description_title", length = 100)
+	    private String jobDescriptionTitle;
+
+	    @Column(name = "meeting_link", length = 255)
+	    private String meetingLink;
+
+	    @Column(length = 50)
+	    private String status;
+
+	    @Column(length = 50)
+	    private String result;
+
+	    @Column(length = 500)
+	    private String feedback;
+
+	    @Column
+	    private Integer technicalScore;
+
+	    @Column
+	    private Integer communicationScore;}

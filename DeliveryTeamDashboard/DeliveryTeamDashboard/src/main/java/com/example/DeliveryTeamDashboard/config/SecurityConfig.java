@@ -30,29 +30,47 @@ public class SecurityConfig {
      
     }
 
+//    @Bean
+//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//        http
+//        	.cors(cors -> cors.configurationSource(corsConfigurationSource())) 
+//            .csrf(csrf -> csrf.disable())
+//            .authorizeHttpRequests(auth -> auth
+//                .requestMatchers("/api/auth/**").permitAll()
+//                .requestMatchers("/api/employee/**").hasAnyRole("EMPLOYEE", "DELIVERY_TEAM", "SALES_TEAM")
+//                .requestMatchers("/api/delivery/**").hasRole("DELIVERY_TEAM")
+//                .requestMatchers("/api/sales/**","/api/sales/job-descriptions").hasRole("SALES_TEAM")
+//                .anyRequest().authenticated()
+//            )
+//            .sessionManagement(session -> session
+//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+//            );
+//
+//        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+//
+//        return http.build();
+//    }
+    
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-        	.cors(cors -> cors.configurationSource(corsConfigurationSource())) 
+        	.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/employee/**").hasAnyRole("EMPLOYEE", "DELIVERY_TEAM", "SALES_TEAM")
+                .requestMatchers("/api/employee/**").hasRole("EMPLOYEE")
                 .requestMatchers("/api/delivery/**").hasRole("DELIVERY_TEAM")
-                .requestMatchers("/api/sales/**","/api/sales/job-descriptions").hasRole("SALES_TEAM")
+                .requestMatchers("/api/sales/**").hasRole("SALES_TEAM")
+                .requestMatchers("/api/interviews/**").hasRole("SALES_TEAM") // Changed to SALES_TEAM
                 .anyRequest().authenticated()
             )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            );
-
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public PasswordEncoder getPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
