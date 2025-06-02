@@ -27,60 +27,6 @@ import com.example.DeliveryTeamDashboard.Service.EmployeeService;
 @RestController
 @RequestMapping("/api/delivery")
 public class DeliveryTeamController {
-//
-//	@Autowired
-//	private EmployeeService employeeService; 
-//	
-//    private final DeliveryTeamService deliveryTeamService;
-//
-//    public DeliveryTeamController(DeliveryTeamService deliveryTeamService) {
-//        this.deliveryTeamService = deliveryTeamService;
-//    }
-//
-//    @GetMapping("/employees")
-//    public List<Employee> getEmployees(
-//            @RequestParam(defaultValue = "all") String technology,
-//            @RequestParam(defaultValue = "all") String resourceType) {
-//        return deliveryTeamService.getEmployees(technology, resourceType);
-//    }
-
-//    @PostMapping("/mock-interviews")
-//    public MockInterview scheduleMockInterview(
-//            @RequestParam Long employeeId,
-//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-//            @RequestParam String interviewer) {
-//        return deliveryTeamService.scheduleMockInterview(employeeId, date, interviewer);
-//    }
-    
-//    @PostMapping("/mock-interviews")
-//    public ResponseEntity<?> scheduleMockInterview(
-//            Authentication authentication,
-//            @RequestParam String empId,
-//            @RequestParam @DateTimeFormat LocalDate date,
-//            @RequestParam @DateTimeFormat(pattern = "HH:mm:ss") LocalTime time,
-//            @RequestParam String interviewer) {
-//            if (authentication == null || !authentication.isAuthenticated()) {
-//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-//            }
-//        try {
-//            MockInterview interview = deliveryTeamService.scheduleMockInterview(empId, date, time, interviewer);
-//            return ResponseEntity.status(HttpStatus.CREATED).body(interview);
-//        } catch (IllegalArgumentException e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-//        }
-//    }
-
-//    @PutMapping("/mock-interviews/{interviewId}/feedback")
-//    public MockInterview updateMockInterviewFeedback(
-//            @PathVariable Long interviewId,
-//            @RequestParam Integer technicalRating,
-//            @RequestParam Integer communicationRating,
-//            @RequestParam String technicalFeedback,
-//            @RequestParam String communicationFeedback,
-//            @RequestParam boolean sentToSales) {
-//        return deliveryTeamService.updateMockInterviewFeedback(interviewId, technicalRating,
-//                communicationRating, technicalFeedback, communicationFeedback, sentToSales);
-//    }
     
     private final DeliveryTeamService deliveryTeamService;
     private final EmployeeService employeeService;
@@ -104,12 +50,12 @@ public class DeliveryTeamController {
             @RequestParam String empId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam @DateTimeFormat(pattern = "HH:mm:ss") LocalTime time,
-            @RequestParam String interviewer) {
+            @RequestParam Long interviewerId) { 
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
         try {
-            MockInterview interview = deliveryTeamService.scheduleMockInterview(empId, date, time, interviewer);
+            MockInterview interview = deliveryTeamService.scheduleMockInterview(empId, date, time, interviewerId);
             return ResponseEntity.status(HttpStatus.CREATED).body(interview);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -125,7 +71,7 @@ public class DeliveryTeamController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam @DateTimeFormat(pattern = "HH:mm:ss") LocalTime time,
             @RequestParam(required = false) String client,
-            @RequestParam(required = false) String interviewer,
+            @RequestParam(required = false) Long interviewerId, // Changed to Long
             @RequestParam(required = false) Integer level,
             @RequestParam(required = false) String jobDescriptionTitle,
             @RequestParam(required = false) String meetingLink) {
@@ -136,13 +82,13 @@ public class DeliveryTeamController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Delivery team can only schedule mock interviews");
         }
         try {
-            MockInterview interview = deliveryTeamService.scheduleMockInterview(empId, date, time, interviewer);
+            MockInterview interview = deliveryTeamService.scheduleMockInterview(empId, date, time, interviewerId);
             return ResponseEntity.status(HttpStatus.CREATED).body(interview);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-
+    
     @PutMapping("/mock-interviews/{interviewId}/feedback")
     @PreAuthorize("hasRole('DELIVERY_TEAM')")
     public ResponseEntity<?> updateMockInterviewFeedback(

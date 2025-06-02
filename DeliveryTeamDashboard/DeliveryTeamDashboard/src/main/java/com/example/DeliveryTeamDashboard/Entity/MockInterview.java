@@ -25,14 +25,15 @@ public class MockInterview {
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
+    @ManyToOne
+    @JoinColumn(name = "interviewer_id", nullable = false)
+    private User interviewer; // Changed from String to User
+
     @Column(nullable = false)
     private LocalDate date;
 
     @Column(nullable = false)
     private LocalTime time;
-
-    @Column(length = 100)
-    private String interviewer;
 
     @Column(length = 50)
     private String status;
@@ -53,5 +54,4 @@ public class MockInterview {
     private Boolean sentToSales;
     
     private boolean deployed;
-    
 }
