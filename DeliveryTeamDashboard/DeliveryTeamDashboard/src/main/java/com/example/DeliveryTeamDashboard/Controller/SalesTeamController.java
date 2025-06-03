@@ -33,93 +33,6 @@ import com.example.DeliveryTeamDashboard.Service.SalesTeamService;
 @RequestMapping("/api/sales")
 public class SalesTeamController {
 
-//    private final SalesTeamService salesTeamService;
-//
-//    public SalesTeamController(SalesTeamService salesTeamService) {
-//        this.salesTeamService = salesTeamService;
-//    }
-//
-//    @GetMapping("/candidates")
-//    public List<Employee> getCandidates(
-//            @RequestParam(defaultValue = "all") String technology,
-//            @RequestParam(defaultValue = "all") String status,
-//            @RequestParam(defaultValue = "all") String resourceType) {
-//        return salesTeamService.getCandidates(technology, status, resourceType);
-//    }
-//
-//    @PostMapping("/client-interviews")
-//    public ClientInterview scheduleClientInterview(
-//            @RequestParam Long employeeId,
-//            @RequestParam String client,
-//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-//            @RequestParam Integer level,
-//            @RequestParam String jdTitle,
-//            @RequestParam String meetingLink) {
-//        return salesTeamService.scheduleClientInterview(employeeId, client, date, level, jdTitle, meetingLink);
-//    }
-//
-//    @PutMapping("/client-interviews/{interviewId}")
-//    public ClientInterview updateClientInterview(
-//            @PathVariable Long interviewId,
-//            @RequestParam String result,
-//            @RequestParam String feedback,
-//            @RequestParam Integer technicalScore,
-//            @RequestParam Integer communicationScore) {
-//        return salesTeamService.updateClientInterview(interviewId, result, feedback, technicalScore, communicationScore);
-//    }
-//
-//    @GetMapping("/client-interviews")
-//    public List<ClientInterview> getClientInterviews(
-//            @RequestParam(required = false) String search) {
-//        return salesTeamService.getClientInterviews(search);
-//    }
-//
-//    @PostMapping("/clients")
-//    public Client addClient(
-//            @RequestParam String name,
-//            @RequestParam String contactEmail,
-//            @RequestParam Integer activePositions,
-//            @RequestParam List<String> technologies) {
-//        return salesTeamService.addClient(name, contactEmail, activePositions, technologies);
-//    }
-//
-//    @GetMapping("/clients")
-//    public List<Client> getClients(
-//            @RequestParam(required = false) String search) {
-//        return salesTeamService.getClients(search);
-//    }
-//
-//    @PostMapping("/job-descriptions")
-//    public JobDescription uploadJobDescription(
-//            @RequestParam String title,
-//            @RequestParam String client,
-//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate receivedDate,
-//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate deadline,
-//            @RequestParam String technology,
-//            @RequestParam String resourceType,
-//            @RequestParam String description,
-//            @RequestParam(required = false) MultipartFile file) throws IOException {
-//        return salesTeamService.uploadJobDescription(title, client, receivedDate, deadline,
-//                technology, resourceType, description, file);
-//    }
-//
-//    @GetMapping("/job-descriptions/{jdId}/download")
-//    public ResponseEntity<Resource> downloadJobDescription(@PathVariable Long jdId) throws IOException {
-//        byte[] fileData = salesTeamService.downloadJobDescription(jdId);
-//        ByteArrayResource resource = new ByteArrayResource(fileData);
-//        return ResponseEntity.ok()
-//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=job_description.pdf")
-//                .contentType(MediaType.APPLICATION_PDF)
-//                .contentLength(fileData.length)
-//                .body(resource);
-//    }
-//
-//    @DeleteMapping("/job-descriptions/{jdId}")
-//    public void deleteJobDescription(@PathVariable Long jdId) {
-//        salesTeamService.deleteJobDescription(jdId);
-//    }
-	
-
 
 	 private final SalesTeamService salesTeamService;
 
@@ -135,27 +48,6 @@ public class SalesTeamController {
 	        return salesTeamService.getCandidates(technology, status, resourceType);
 	    }
 
-//	    @PostMapping("/client-interviews")
-//	    @PreAuthorize("hasRole('SALES_TEAM')")
-//	    public ResponseEntity<?> scheduleClientInterview(
-//	            Authentication authentication,
-//	            @RequestParam String empId,
-//	            @RequestParam String client,
-//	            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-//	            @RequestParam @DateTimeFormat(pattern = "HH:mm:ss") LocalTime time,
-//	            @RequestParam Integer level,
-//	            @RequestParam String jobDescriptionTitle,
-//	            @RequestParam String meetingLink) {
-//	        if (authentication == null || !authentication.isAuthenticated()) {
-//	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-//	        }
-//	        try {
-//	            ClientInterview interview = salesTeamService.scheduleClientInterview(empId, client, date, time, level, jobDescriptionTitle, meetingLink);
-//	            return ResponseEntity.status(HttpStatus.CREATED).body(interview);
-//	        } catch (IllegalArgumentException e) {
-//	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-//	        }
-//	    }
 
 	    @PostMapping("/interviews/schedule")
 	    @PreAuthorize("hasRole('SALES_TEAM')")

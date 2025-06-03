@@ -43,26 +43,7 @@ public class DeliveryTeamController {
         return deliveryTeamService.getEmployees(technology, resourceType);
     }
 
-    @PostMapping("/mock-interviews")
-    @PreAuthorize("hasRole('DELIVERY_TEAM')")
-    public ResponseEntity<?> scheduleMockInterview(
-            Authentication authentication,
-            @RequestParam String empId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam @DateTimeFormat(pattern = "HH:mm:ss") LocalTime time,
-            @RequestParam Long interviewerId) { 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-        }
-        try {
-            MockInterview interview = deliveryTeamService.scheduleMockInterview(empId, date, time, interviewerId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(interview);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/schedule")
+       @PostMapping("/schedule")
     @PreAuthorize("hasRole('DELIVERY_TEAM')")
     public ResponseEntity<?> scheduleInterview(
             Authentication authentication,
