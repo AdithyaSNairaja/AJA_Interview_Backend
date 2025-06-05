@@ -41,4 +41,7 @@ public class Employee {
 
     @Column(length = 20)
     private String status;
+    
+    @Column(name = "profile_pic_s3_key", length = 255)
+    private String profilePicS3Key;
 }

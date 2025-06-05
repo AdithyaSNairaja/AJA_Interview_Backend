@@ -277,4 +277,44 @@
 			}
 			return interviewQuestionRepository.findAll();
 		}
+		
+		
+
+
+		public Employee updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
+	        if (employeeId == null) {
+	            throw new IllegalArgumentException("Employee ID cannot be null");
+	        }
+	        if (file == null || file.isEmpty()) {
+	            throw new IllegalArgumentException("Profile picture file cannot be null or empty");
+	        }
+	        String contentType = file.getContentType();
+	        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+	            throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
+	        }
+
+	        Employee employee = employeeRepository.findById(employeeId)
+	                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
+
+	        // Delete existing profile picture from S3 if it exists
+	        if (employee.getProfilePicS3Key() != null) {
+	            s3Service.deleteFile(employee.getProfilePicS3Key());
+	        }
+
+	        String s3Key = s3Service.uploadFile(file, "profile-pictures");
+	        employee.setProfilePicS3Key(s3Key);
+	        return employeeRepository.save(employee);
+	    }
+
+	    public byte[] getProfilePicture(Long employeeId) throws IOException {
+	        if (employeeId == null) {
+	            throw new IllegalArgumentException("Employee ID cannot be null");
+	        }
+	        Employee employee = employeeRepository.findById(employeeId)
+	                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
+	        if (employee.getProfilePicS3Key() == null) {
+	            throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
+	        }
+	        return s3Service.downloadFile(employee.getProfilePicS3Key());
+	    }
 	}

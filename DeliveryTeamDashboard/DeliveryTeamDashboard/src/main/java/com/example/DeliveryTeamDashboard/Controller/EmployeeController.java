@@ -147,4 +147,35 @@ public class EmployeeController {
              @RequestParam(defaultValue = "all") String technology) {
          return employeeService.getInterviewQuestions(technology);
      }
+     
+     @PutMapping("/profile-picture")
+     public ResponseEntity<?> updateProfilePicture(
+             Authentication authentication,
+             @RequestParam Long employeeId,
+             @RequestParam MultipartFile file) throws IOException {
+         if (authentication == null || !authentication.isAuthenticated()) {
+             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+         }
+         try {
+             Employee employee = employeeService.updateProfilePicture(employeeId, file);
+             return ResponseEntity.status(HttpStatus.OK).body(employee);
+         } catch (IllegalArgumentException | IOException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
+     }
+
+     @GetMapping("/profile-picture/{employeeId}")
+     public ResponseEntity<?> getProfilePicture(@PathVariable Long employeeId) throws IOException {
+         try {
+             byte[] fileData = employeeService.getProfilePicture(employeeId);
+             ByteArrayResource resource = new ByteArrayResource(fileData);
+             return ResponseEntity.ok()
+                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=profile-picture.jpg")
+                     .contentType(MediaType.IMAGE_JPEG)
+                     .contentLength(fileData.length)
+                     .body(resource);
+         } catch (IllegalArgumentException | IOException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
+     }
     }
