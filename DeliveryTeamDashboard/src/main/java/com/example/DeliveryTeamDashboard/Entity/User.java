@@ -30,4 +30,7 @@ public class User {
 
     @Column(nullable = false, length = 20)
     private String role;
+    
+    @Column(name = "profile_pic_s3_key", length = 255)
+    private String profilePicS3Key;
 }

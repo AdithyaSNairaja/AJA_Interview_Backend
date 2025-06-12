@@ -31,6 +31,7 @@ import com.example.DeliveryTeamDashboard.Entity.Client;
 import com.example.DeliveryTeamDashboard.Entity.ClientInterview;
 import com.example.DeliveryTeamDashboard.Entity.Employee;
 import com.example.DeliveryTeamDashboard.Entity.JobDescription;
+import com.example.DeliveryTeamDashboard.Entity.User;
 import com.example.DeliveryTeamDashboard.Repository.ClientInterviewRepository;
 import com.example.DeliveryTeamDashboard.Service.SalesTeamService;
 import com.example.DeliveryTeamDashboard.Service.SalesTeamService.ClientInterviewSchedule;
@@ -278,4 +279,36 @@ public class SalesTeamController {
 	    	
 	    	return in.size();
 	    }
+	    
+	    @PutMapping("/profile-picture")
+	     public ResponseEntity<?> updateProfilePicture(
+	             Authentication authentication,
+	             @RequestParam Long Id,
+	             @RequestParam MultipartFile file) throws IOException {
+	         if (authentication == null || !authentication.isAuthenticated()) {
+	             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+	         }
+	         try {
+	             User user = salesTeamService.updateProfilePicture(Id, file);
+	             return ResponseEntity.status(HttpStatus.OK).body(user);
+	         } catch (IllegalArgumentException | IOException e) {
+	             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+	         }
+	     }
+
+	     @GetMapping("/profile-picture/{employeeId}")
+	     public ResponseEntity<?> getProfilePicture(@PathVariable Long employeeId) throws IOException {
+	         try {
+	             byte[] fileData = salesTeamService.getProfilePicture(employeeId);
+	             ByteArrayResource resource = new ByteArrayResource(fileData);
+	             return ResponseEntity.ok()
+	                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=profile-picture.jpg")
+	                     .contentType(MediaType.IMAGE_JPEG)
+	                     .contentLength(fileData.length)
+	                     .body(resource);
+	         } catch (IllegalArgumentException | IOException e) {
+	             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+	         }
+	     }
+
 }

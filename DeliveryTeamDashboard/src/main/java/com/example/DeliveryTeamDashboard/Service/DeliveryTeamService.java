@@ -1,11 +1,14 @@
 package com.example.DeliveryTeamDashboard.Service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.DeliveryTeamDashboard.Entity.Employee;
 import com.example.DeliveryTeamDashboard.Entity.MockInterview;
@@ -24,6 +27,9 @@ public class DeliveryTeamService {
     private final EmployeeService employeeService;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    
+    @Autowired
+    private  S3Service s3Service;
 
     public DeliveryTeamService(EmployeeRepository employeeRepository, 
                              MockInterviewRepository mockInterviewRepository, 
@@ -105,4 +111,42 @@ public class DeliveryTeamService {
         interview.setStatus("completed");
         return mockInterviewRepository.save(interview);
     }
+    
+    public User updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
+        if (employeeId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Profile picture file cannot be null or empty");
+        }
+        String contentType = file.getContentType();
+        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+            throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
+        }
+
+        User user =userRepository.findById(employeeId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+        
+        // Delete existing profile picture from S3 if it exists
+        if (user.getProfilePicS3Key() != null) {
+            s3Service.deleteFile(user.getProfilePicS3Key());
+        }
+
+        String s3Key = s3Service.uploadFile(file, "profile-pictures");
+        user.setProfilePicS3Key(s3Key);
+        return userRepository.save(user);
+    }
+
+    public byte[] getProfilePicture(Long employeeId) throws IOException {
+        if (employeeId == null) {
+            throw new IllegalArgumentException("Employee ID cannot be null");
+        }
+        User user = userRepository.findById(employeeId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+        if (user.getProfilePicS3Key() == null) {
+            throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
+        }
+        return s3Service.downloadFile(user.getProfilePicS3Key());
+    }
+
 }

@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,121 +14,18 @@ import com.example.DeliveryTeamDashboard.Entity.Client;
 import com.example.DeliveryTeamDashboard.Entity.ClientInterview;
 import com.example.DeliveryTeamDashboard.Entity.Employee;
 import com.example.DeliveryTeamDashboard.Entity.JobDescription;
+import com.example.DeliveryTeamDashboard.Entity.User;
 import com.example.DeliveryTeamDashboard.Repository.ClientInterviewRepository;
 import com.example.DeliveryTeamDashboard.Repository.ClientRepository;
 import com.example.DeliveryTeamDashboard.Repository.EmployeeRepository;
 import com.example.DeliveryTeamDashboard.Repository.JobDescriptionRepository;
+import com.example.DeliveryTeamDashboard.Repository.UserRepository;
 
 @Service
 public class SalesTeamService {
 
-//    private final EmployeeRepository employeeRepository;
-//    private final ClientInterviewRepository clientInterviewRepository;
-//    private final ClientRepository clientRepository;
-//    private final JobDescriptionRepository jobDescriptionRepository;
-//    private final S3Service s3Service;
-//
-//    public SalesTeamService(EmployeeRepository employeeRepository,
-//                            ClientInterviewRepository clientInterviewRepository,
-//                            ClientRepository clientRepository,
-//                            JobDescriptionRepository jobDescriptionRepository,
-//                            S3Service s3Service) {
-//        this.employeeRepository = employeeRepository;
-//        this.clientInterviewRepository = clientInterviewRepository;
-//        this.clientRepository = clientRepository;
-//        this.jobDescriptionRepository = jobDescriptionRepository;
-//        this.s3Service = s3Service;
-//    }
-//
-//    public List<Employee> getCandidates(String technology, String status, String resourceType) {
-//        List<Employee> employees = employeeRepository.findAll();
-//        return employees.stream()
-//                .filter(e -> "all".equalsIgnoreCase(technology) || e.getTechnology().equalsIgnoreCase(technology))
-//                .filter(e -> "all".equalsIgnoreCase(resourceType) || e.getResourceType().equalsIgnoreCase(resourceType))
-//                .toList();
-//    }
-//
-//    public ClientInterview scheduleClientInterview(Long employeeId, String client, LocalDate date, Integer level, String jdTitle, String meetingLink) {
-//        Employee employee = employeeRepository.findById(employeeId)
-//                .orElseThrow(() -> new RuntimeException("Employee not found"));
-//        ClientInterview interview = new ClientInterview();
-//        interview.setEmployee(employee);
-//        interview.setClient(client);
-//        interview.setDate(date);
-//        interview.setLevel(level);
-//        interview.setJobDescriptionTitle(jdTitle);
-//        interview.setMeetingLink(meetingLink);
-//        interview.setStatus("scheduled");
-//        return clientInterviewRepository.save(interview);
-//    }
-//
-//    public ClientInterview updateClientInterview(Long interviewId, String result, String feedback, Integer technicalScore, Integer communicationScore) {
-//        ClientInterview interview = clientInterviewRepository.findById(interviewId)
-//                .orElseThrow(() -> new RuntimeException("Interview not found"));
-//        interview.setResult(result);
-//        interview.setFeedback(feedback);
-//        interview.setTechnicalScore(technicalScore);
-//        interview.setCommunicationScore(communicationScore);
-//        interview.setStatus("completed");
-//        return clientInterviewRepository.save(interview);
-//    }
-//
-//    public List<ClientInterview> getClientInterviews(String search) {
-//        if (search != null && !search.isEmpty()) {
-//            return clientInterviewRepository.findByClientContainingIgnoreCase(search);
-//        }
-//        return clientInterviewRepository.findAll();
-//    }
-//
-//    public Client addClient(String name, String contactEmail, Integer activePositions, List<String> technologies) {
-//        Client client = new Client();
-//        client.setName(name);
-//        client.setContactEmail(contactEmail);
-//        client.setActivePositions(activePositions);
-//        client.setTechnologies(technologies);
-//        return clientRepository.save(client);
-//    }
-//
-//    public List<Client> getClients(String search) {
-//        if (search != null && !search.isEmpty()) {
-//            return clientRepository.findByNameContainingIgnoreCase(search);
-//        }
-//        return clientRepository.findAll();
-//    }
-//
-//    public JobDescription uploadJobDescription(String title, String client, LocalDate receivedDate,
-//                                              LocalDate deadline, String technology, String resourceType,
-//                                              String description, MultipartFile file) throws IOException {
-//        String s3Key = file != null ? s3Service.uploadFile(file, "job-descriptions") : null;
-//        JobDescription jd = new JobDescription();
-//        jd.setTitle(title);
-//        jd.setClient(client);
-//        jd.setReceivedDate(receivedDate);
-//        jd.setDeadline(deadline);
-//        jd.setTechnology(technology);
-//        jd.setResourceType(resourceType);
-//        jd.setDescription(description);
-//        jd.setS3Key(s3Key);
-//        return jobDescriptionRepository.save(jd);
-//    }
-//
-//    public byte[] downloadJobDescription(Long jdId) throws IOException {
-//        JobDescription jd = jobDescriptionRepository.findById(jdId)
-//                .orElseThrow(() -> new RuntimeException("Job Description not found"));
-//        if (jd.getS3Key() == null) {
-//            throw new RuntimeException("No file associated with this Job Description");
-//        }
-//        return s3Service.downloadFile(jd.getS3Key());
-//    }
-//
-//    public void deleteJobDescription(Long jdId) {
-//        JobDescription jd = jobDescriptionRepository.findById(jdId)
-//                .orElseThrow(() -> new RuntimeException("Job Description not found"));
-//        if (jd.getS3Key() != null) {
-//            s3Service.deleteFile(jd.getS3Key());
-//        }
-//        jobDescriptionRepository.delete(jd);
-//    }
+	@Autowired
+	private UserRepository userRepository;
 	
 	private final EmployeeRepository employeeRepository;
     private final ClientInterviewRepository clientInterviewRepository;
@@ -343,4 +241,42 @@ public class SalesTeamService {
             this.deployedStatus = deployedStatus;
         }
     }
+    	public User updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
+	        if (employeeId == null) {
+	            throw new IllegalArgumentException("User ID cannot be null");
+	        }
+	        if (file == null || file.isEmpty()) {
+	            throw new IllegalArgumentException("Profile picture file cannot be null or empty");
+	        }
+	        String contentType = file.getContentType();
+	        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+	            throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
+	        }
+
+	        User user =userRepository.findById(employeeId)
+	                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+
+	        // Delete existing profile picture from S3 if it exists
+	        if (user.getProfilePicS3Key() != null) {
+	            s3Service.deleteFile(user.getProfilePicS3Key());
+	        }
+
+	        String s3Key = s3Service.uploadFile(file, "profile-pictures");
+	        user.setProfilePicS3Key(s3Key);
+	        return userRepository.save(user);
+	    }
+
+	    public byte[] getProfilePicture(Long employeeId) throws IOException {
+	        if (employeeId == null) {
+	            throw new IllegalArgumentException("Employee ID cannot be null");
+	        }
+	        User user = userRepository.findById(employeeId)
+	                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+	        if (user.getProfilePicS3Key() == null) {
+	            throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
+	        }
+	        return s3Service.downloadFile(user.getProfilePicS3Key());
+	    }
+
+	    
 }
