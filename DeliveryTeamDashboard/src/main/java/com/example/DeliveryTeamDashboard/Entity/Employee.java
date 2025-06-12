@@ -50,4 +50,6 @@ public class Employee {
 
     @Column(name = "deployed", nullable = false)
     private Boolean deployed = false;
+    
+    private Boolean sentToSales = false; // New field
 }

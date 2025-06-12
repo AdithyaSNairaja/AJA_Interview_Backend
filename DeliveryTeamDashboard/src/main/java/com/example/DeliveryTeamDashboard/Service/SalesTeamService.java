@@ -54,11 +54,20 @@ public class SalesTeamService {
                 .filter(e -> "all".equalsIgnoreCase(technology) || e.getTechnology().equalsIgnoreCase(technology))
                 .filter(e -> "all".equalsIgnoreCase(status) || e.getStatus().equalsIgnoreCase(status))
                 .filter(e -> "all".equalsIgnoreCase(resourceType) || e.getResourceType().equalsIgnoreCase(resourceType))
+                .filter(Employee::getSentToSales)
                 .collect(Collectors.toList());
     }
 
     public ClientInterview scheduleClientInterview(String empId, String client, LocalDate date, LocalTime time, Integer level, String jobDescriptionTitle, String meetingLink, Boolean deployedStatus) {
+    	Employee employee = employeeRepository.findByEmpId(empId)
+                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
+        
+        if (!Boolean.TRUE.equals(employee.getSentToSales())) {
+            throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first.");
+        }
+
         return (ClientInterview) employeeService.scheduleInterview(empId, "client", date, time, client, null, level, jobDescriptionTitle, meetingLink, deployedStatus);
+        
     }
 
     public ClientInterview updateClientInterview(Long interviewId, String result, String feedback, Integer technicalScore, Integer communicationScore, Boolean deployedStatus) {
@@ -69,6 +78,15 @@ public class SalesTeamService {
         interview.setTechnicalScore(technicalScore);
         interview.setCommunicationScore(communicationScore);
         interview.setStatus("completed");
+        
+        if ("pass".equalsIgnoreCase(result) && (deployedStatus == null || !deployedStatus)) {
+            Integer currentLevel = interview.getLevel();
+            if (currentLevel != null) {
+                interview.setLevel(currentLevel + 1);
+            } else {
+                interview.setLevel(1); // Default to level 1 if null
+            }
+        }
         
         if (deployedStatus != null) {
             interview.setDeployedStatus(deployedStatus);
@@ -160,6 +178,13 @@ public class SalesTeamService {
         }
         if (schedules == null || schedules.isEmpty()) {
             throw new IllegalArgumentException("Schedules list cannot be null or empty");
+        }
+        
+        Employee employee = employeeRepository.findByEmpId(empId)
+                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
+        
+        if (!Boolean.TRUE.equals(employee.getSentToSales())) {
+            throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first.");
         }
 
         return schedules.stream()

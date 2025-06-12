@@ -96,6 +96,11 @@
 	
 			User interviewer = userRepository.findById(interviewerId)
 					.orElseThrow(() -> new IllegalArgumentException("Interviewer not found with ID: " + interviewerId));
+			
+			 if (Boolean.TRUE.equals(employee.getSentToSales())) {
+		            employee.setSentToSales(false);
+		            employeeRepository.save(employee);
+		        }
 	
 			MockInterview interview = new MockInterview();
 			interview.setEmployee(employee);
@@ -132,7 +137,11 @@
 	
 			Employee employee = employeeRepository.findByEmpId(empId)
 					.orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
-	
+			
+			if (!Boolean.TRUE.equals(employee.getSentToSales())) {
+	            throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first by delivery team.");
+	        }
+			
 			ClientInterview interview = new ClientInterview();
 			interview.setEmployee(employee);
 			interview.setDate(date);

@@ -76,22 +76,28 @@ public class DeliveryTeamService {
         
         
     }
+    public MockInterview updateMockInterviewFeedback(Long interviewId, String technicalFeedback, String communicationFeedback,
+            Integer technicalScore, Integer communicationScore, Boolean sentToSales) {
+    	MockInterview interview = mockInterviewRepository.findById(interviewId)
+    			.orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
+    	interview.setTechnicalFeedback(technicalFeedback);
+    	interview.setCommunicationFeedback(communicationFeedback);
+    	interview.setTechnicalRating(technicalScore);
+    	interview.setCommunicationRating(communicationScore);
+    	interview.setStatus("completed");
 
-    public MockInterview updateMockInterviewFeedback(Long interviewId, String technicalFeedback,String communicationFeedback,
-     Integer technicalScore, Integer communicationScore,Boolean sentToSales) {
-        MockInterview interview = mockInterviewRepository.findById(interviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
-        interview.setTechnicalFeedback(technicalFeedback);
-        interview.setCommunicationFeedback(communicationFeedback);
-        if(sentToSales){
-            interview.setSentToSales(sentToSales);
-        }
-        interview.setTechnicalRating(technicalScore);
-        interview.setCommunicationRating(communicationScore);
-        interview.setStatus("completed");
-        return mockInterviewRepository.save(interview);
-    }
+    	if (sentToSales != null && sentToSales) {
+    		interview.setSentToSales(true);
+    		Employee employee = interview.getEmployee();
+    		if (employee != null) {
+    			employee.setSentToSales(true); // Update employee's sentToSales status
+    			employeeRepository.save(employee);
+    		}
+    	}
 
+    	return mockInterviewRepository.save(interview);
+}
+    
     public List<MockInterview> getUpcomingInterviews() {
         return mockInterviewRepository.findByStatus("scheduled");
     }
