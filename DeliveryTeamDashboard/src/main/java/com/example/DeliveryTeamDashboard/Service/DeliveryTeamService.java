@@ -95,8 +95,33 @@ public class DeliveryTeamService {
     		}
     	}
 
-    	return mockInterviewRepository.save(interview);
-}
+    	MockInterview savedInterview = mockInterviewRepository.save(interview);
+
+        // Send email notification to employee
+
+        try {
+            Employee employee = interview.getEmployee();
+            if (employee != null && employee.getUser() != null) {
+                String employeeEmail = employee.getUser().getEmail();
+                String employeeName = employee.getUser().getFullName();
+
+                emailService.sendMockInterviewFeedbackNotification(
+                    employeeEmail,
+                    employeeName,
+                    interview.getDate(),
+                    interview.getTime(),
+                    technicalFeedback,
+                    communicationFeedback,
+                    technicalScore,
+                    communicationScore
+                );
+            }
+        } catch (MessagingException e) {
+            System.err.println("Failed to send feedback email notification: " + e.getMessage());
+        }
+
+        return savedInterview;
+        }
     
     public List<MockInterview> getUpcomingInterviews() {
         return mockInterviewRepository.findByStatus("scheduled");

@@ -21,11 +21,16 @@ import com.example.DeliveryTeamDashboard.Repository.EmployeeRepository;
 import com.example.DeliveryTeamDashboard.Repository.JobDescriptionRepository;
 import com.example.DeliveryTeamDashboard.Repository.UserRepository;
 
+import jakarta.mail.MessagingException;
+
 @Service
 public class SalesTeamService {
 
 	@Autowired
 	private UserRepository userRepository;
+	
+	@Autowired
+	private EmailService emailService;
 	
 	private final EmployeeRepository employeeRepository;
     private final ClientInterviewRepository clientInterviewRepository;
@@ -61,7 +66,14 @@ public class SalesTeamService {
     public ClientInterview scheduleClientInterview(String empId, String client, LocalDate date, LocalTime time, Integer level, String jobDescriptionTitle, String meetingLink, Boolean deployedStatus) {
     	Employee employee = employeeRepository.findByEmpId(empId)
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
-        
+       
+    	try {
+			emailService.sendClientInterviewNotification(employee.getUser().getEmail(),employee.getUser().getFullName(),client,date,time,level,jobDescriptionTitle,meetingLink);
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
         if (!Boolean.TRUE.equals(employee.getSentToSales())) {
             throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first.");
         }
@@ -98,8 +110,37 @@ public class SalesTeamService {
                 }
             }
         }
-        return clientInterviewRepository.save(interview);
+        ClientInterview savedInterview = clientInterviewRepository.save(interview);
+
+        try {
+            Employee employee = interview.getEmployee();
+            if (employee != null && employee.getUser() != null) {
+                String employeeEmail = employee.getUser().getEmail();
+                String employeeName = employee.getUser().getFullName();
+                String client = interview.getClient();
+                LocalDate date = interview.getDate();
+                LocalTime time = interview.getTime();
+
+                emailService.sendClientInterviewFeedbackNotification(
+                    employeeEmail,
+                    employeeName,
+                    client,
+                    date,
+                    time,
+                    result,
+                    feedback,
+                    technicalScore,
+                    communicationScore,
+                    interview.getLevel()
+                );
+            }
+        } catch (MessagingException e) {
+            System.err.println("Failed to send client interview feedback email notification: " + e.getMessage());
+        }
+
+        return savedInterview;
     }
+
 
     public List<ClientInterview> getClientInterviews(String search) {
         if (search != null && !search.isEmpty()) {
