@@ -90,35 +90,6 @@ public class SalesTeamController {
 	        }
 	    }
 
-//	    @PutMapping("/client-interviews/{interviewId}")
-//	    @PreAuthorize("hasRole('SALES_TEAM')")
-//	    public ResponseEntity<?> updateClientInterview(
-//	            Authentication authentication,
-//	            @PathVariable Long interviewId,
-//	            @RequestBody Map<String, Object> requestBody) {
-//	        if (authentication == null || !authentication.isAuthenticated()) {
-//	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-//	        }
-//	        try {
-//	            String result = (String) requestBody.get("result");
-//	            String feedback = (String) requestBody.get("feedback");
-//	            Integer technicalScore = ((Number) requestBody.get("technicalScore")).intValue();
-//	            Integer communicationScore = ((Number) requestBody.get("communicationScore")).intValue();
-//	            Boolean deployedStatus = (Boolean) requestBody.get("deployedStatus");
-//
-//	            if (result == null || feedback == null || technicalScore == null || communicationScore == null) {
-//	                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All required fields (result, feedback, technicalScore, communicationScore) are missing.");
-//	            }
-//
-//	            ClientInterview interview = salesTeamService.updateClientInterview(interviewId, result, feedback, technicalScore, communicationScore, deployedStatus);
-//	            return ResponseEntity.ok(interview);
-//	        } catch (IllegalArgumentException e) {
-//	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-//	        } catch (ClassCastException e) {
-//	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid data types in request: " + e.getMessage());
-//	        }
-//	    }
-	    
 	    @PutMapping("/client-interviews/{interviewId}")
 	    @PreAuthorize("hasRole('SALES_TEAM')")
 	    public ResponseEntity<?> updateClientInterview(
@@ -269,28 +240,7 @@ public class SalesTeamController {
 	        }
 	    }
 
-//	    @GetMapping("/client-interviews/{interviewId}/feedback")
-//	    @PreAuthorize("hasRole('SALES_TEAM') or hasRole('DELIVERY_TEAM') or hasRole('EMPLOYEE')")
-//	    public ResponseEntity<?> getClientInterviewFeedback(@PathVariable Long interviewId) {
-//	        try {
-//	            ClientInterview interview = salesTeamService.getClientInterviewById(interviewId);
-//	            if (interview == null) {
-//	                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Interview not found with ID: " + interviewId);
-//	            }
-//	            // Return only the feedback-related fields
-//	            Map<String, Object> feedbackDetails = new java.util.HashMap<>();
-//	            feedbackDetails.put("id", interview.getId());
-//	            feedbackDetails.put("feedback", interview.getFeedback());
-//	            feedbackDetails.put("technicalScore", interview.getTechnicalScore());
-//	            feedbackDetails.put("communicationScore", interview.getCommunicationScore());
-//	            feedbackDetails.put("result", interview.getResult());
-//	            feedbackDetails.put("overallStatus", interview.getStatus());
-//	            return ResponseEntity.ok(feedbackDetails);
-//	        } catch (IllegalArgumentException e) {
-//	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-//	        }
-//	    }
-	    
+//	    
 	    @GetMapping("/client-interviews/{interviewId}/feedback")
 	    @PreAuthorize("hasRole('SALES_TEAM') or hasRole('DELIVERY_TEAM') or hasRole('EMPLOYEE')")
 	    public ResponseEntity<?> getClientInterviewFeedback(@PathVariable Long interviewId) {

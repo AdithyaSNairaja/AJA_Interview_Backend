@@ -36,8 +36,8 @@ public class Employee {
     @Column(name = "resource_type", length = 10)
     private String resourceType;
 
-    @Column(length = 50)
-    private String level;
+//    @Column(length = 50)
+//    private String level;
 
     @Column(length = 20)
     private String status;

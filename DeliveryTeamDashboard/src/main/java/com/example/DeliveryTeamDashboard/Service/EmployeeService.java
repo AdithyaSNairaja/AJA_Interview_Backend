@@ -328,25 +328,7 @@
 	        return s3Service.downloadFile(employee.getProfilePicS3Key());
 	    }
 
-	    public void sendToSales(Long employeeId) {
-	        // Implementation of sendToSales method
-	    }
-
-		public Employee updateReadyForDeployment(Long employeeId, Boolean readyForDeployment) {
-			if (employeeId == null) {
-				throw new IllegalArgumentException("Employee ID cannot be null");
-			}
-			if (readyForDeployment == null) {
-				throw new IllegalArgumentException("Ready for deployment status cannot be null");
-			}
-		
-			Employee employee = employeeRepository.findById(employeeId)
-					.orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
-		
-			employee.setReadyForDeployment(readyForDeployment);
-			return employeeRepository.save(employee);
-		}
-		
+	  
 		public List<Employee> getEmployeesReadyForDeployment(String technology, String resourceType) {
 			List<Employee> employees = employeeRepository.findByReadyForDeploymentTrue();
 			
@@ -358,7 +340,4 @@
 					.toList();
 		}
 
-		public List<Employee> getAllDeployedEmployees() {
-			return employeeRepository.findByDeployedTrue();
-		}
 	}

@@ -180,21 +180,7 @@ public class EmployeeController {
          }
      }
 
-     @PutMapping("/ready-for-deployment/{employeeId}")
-     public ResponseEntity<?> updateReadyForDeployment(
-             Authentication authentication,
-             @PathVariable Long employeeId,
-             @RequestParam Boolean readyForDeployment) {
-         if (authentication == null || !authentication.isAuthenticated()) {
-             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-         }
-         try {
-             Employee employee = employeeService.updateReadyForDeployment(employeeId, readyForDeployment);
-             return ResponseEntity.ok(employee);
-         } catch (IllegalArgumentException e) {
-             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-         }
-     }
+  
 
      @GetMapping("/ready-for-deployment")
      public ResponseEntity<List<Employee>> getEmployeesReadyForDeployment(
@@ -204,10 +190,5 @@ public class EmployeeController {
          return ResponseEntity.ok(employees);
      }
 
-     @GetMapping("/deployed")
-     public ResponseEntity<List<Employee>> getAllDeployedEmployees() {
-         List<Employee> deployedEmployees = employeeService.getAllDeployedEmployees();
-         return ResponseEntity.ok(deployedEmployees);
-     }
 
 }
