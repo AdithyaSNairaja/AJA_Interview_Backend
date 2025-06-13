@@ -57,7 +57,7 @@ public class SecurityConfig {
         	.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/**","/api/delivery/mock-interviews/performance").permitAll()
                 .requestMatchers("/api/employee/**").hasAnyRole("EMPLOYEE", "DELIVERY_TEAM","SALES_TEAM")
                 .requestMatchers("/api/delivery/**").hasRole("DELIVERY_TEAM")
                 .requestMatchers("/api/sales/**").hasRole("SALES_TEAM")

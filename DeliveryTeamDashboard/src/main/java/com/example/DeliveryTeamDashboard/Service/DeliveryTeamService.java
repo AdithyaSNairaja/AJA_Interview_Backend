@@ -3,7 +3,9 @@ package com.example.DeliveryTeamDashboard.Service;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -180,4 +182,30 @@ public class DeliveryTeamService {
         return s3Service.downloadFile(user.getProfilePicS3Key());
     }
 
+    public List<Map<String, Object>> getMockInterviewPerformance() {
+        List<MockInterview> completedInterviews = mockInterviewRepository.findByStatus("completed");
+        
+        return completedInterviews.stream()
+                .map(interview -> {
+                    Map<String, Object> performance = new HashMap<>();
+                    Employee employee = interview.getEmployee();
+                    User user = employee != null ? employee.getUser() : null;
+
+                    performance.put("employeeId", employee != null ? employee.getEmpId() : null);
+                    performance.put("employeeName", user != null ? user.getFullName() : "Unknown");
+                    performance.put("technology", employee != null ? employee.getTechnology() : null);
+                    performance.put("resourceType", employee != null ? employee.getResourceType() : null);
+
+                    // Calculate total rating, handle null ratings
+                    int totalRating = 0;
+                    if (interview.getTechnicalRating() != null && interview.getCommunicationRating() != null) {
+                        totalRating = interview.getTechnicalRating() + interview.getCommunicationRating();
+                    }
+                    performance.put("totalRating", totalRating);
+
+                    return performance;
+                })
+                .sorted((a, b) -> Integer.compare((Integer) b.get("totalRating"), (Integer) a.get("totalRating")))
+                .collect(Collectors.toList());
+    }
 }

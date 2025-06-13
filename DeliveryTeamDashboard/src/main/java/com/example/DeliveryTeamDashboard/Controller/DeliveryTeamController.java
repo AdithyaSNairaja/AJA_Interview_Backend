@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -155,4 +155,14 @@ public class DeliveryTeamController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
         }
+    
+    @GetMapping("/mock-interviews/performance")
+    public ResponseEntity<List<Map<String, Object>>> getMockInterviewPerformance() {
+        try {
+            List<Map<String, Object>> performanceList = deliveryTeamService.getMockInterviewPerformance();
+            return ResponseEntity.ok(performanceList);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
 }
