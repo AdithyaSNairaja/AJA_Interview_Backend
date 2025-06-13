@@ -217,6 +217,8 @@
 			return resumeRepository.save(resume);
 		}
 	
+		
+		
 		public byte[] downloadResume(Long resumeId) throws IOException {
 			if (resumeId == null) {
 				throw new IllegalArgumentException("Resume ID cannot be null");
@@ -225,6 +227,24 @@
 					.orElseThrow(() -> new IllegalArgumentException("Resume not found with ID: " + resumeId));
 			return s3Service.downloadFile(resume.getS3Key());
 		}
+		
+		 public byte[] downloadResumeByEmployeeId(Long employeeId) throws IOException {
+		        if (employeeId == null) {
+		            throw new IllegalArgumentException("Employee ID cannot be null");
+		        }
+		        List<Resume> resumes = resumeRepository.findByEmployeeId(employeeId);
+		        if (resumes.isEmpty()) {
+		            throw new IllegalArgumentException("No resume found for employee ID: " + employeeId);
+		        }
+		        // Select the latest resume based on ID
+		        Resume latestResume = resumes.stream()
+		                .max((r1, r2) -> Long.compare(r1.getId(), r2.getId()))
+		                .orElseThrow(() -> new IllegalArgumentException("No resume found for employee ID: " + employeeId));
+		        if (latestResume.getS3Key() == null) {
+		            throw new IllegalArgumentException("No resume file associated with employee ID: " + employeeId);
+		        }
+		        return s3Service.downloadFile(latestResume.getS3Key());
+		    }
 	
 		public void deleteResume(Long resumeId) {
 			if (resumeId == null) {

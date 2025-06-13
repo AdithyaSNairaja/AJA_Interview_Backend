@@ -115,6 +115,23 @@ public class EmployeeController {
              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
          }
      }
+     
+
+     @GetMapping("/resumes/employee/{employeeId}/download")
+     public ResponseEntity<?> getResumeByEmployeeId(@PathVariable Long employeeId) throws IOException {
+         try {
+             byte[] fileData = employeeService.downloadResumeByEmployeeId(employeeId);
+             ByteArrayResource resource = new ByteArrayResource(fileData);
+             return ResponseEntity.ok()
+                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=resume.pdf")
+                     .contentType(MediaType.APPLICATION_PDF)
+                     .contentLength(fileData.length)
+                     .body(resource);
+         } catch (IllegalArgumentException | IOException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
+     }
+
 
      @DeleteMapping("/resumes/{resumeId}")
      public ResponseEntity<?> deleteResume(@PathVariable Long resumeId) {
