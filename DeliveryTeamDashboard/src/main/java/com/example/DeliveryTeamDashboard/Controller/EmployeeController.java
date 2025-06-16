@@ -207,5 +207,10 @@ public class EmployeeController {
          return ResponseEntity.ok(employees);
      }
 
+     @GetMapping("/deployed")
+     public ResponseEntity<List<Employee>> getDeployedEmployees() {
+         List<Employee> employees = employeeService.getDeployedEmployees();
+         return ResponseEntity.ok(employees);
+     }
 
 }

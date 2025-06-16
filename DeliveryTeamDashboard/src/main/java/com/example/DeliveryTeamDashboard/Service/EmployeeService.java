@@ -3,6 +3,7 @@
 	import java.io.IOException;
 	import java.time.LocalDate;
 	import java.time.LocalTime;
+	import java.util.ArrayList;
 	import java.util.List;
 	import java.util.Objects;
 	
@@ -358,6 +359,18 @@
 					.filter(e -> resourceType == null || "all".equalsIgnoreCase(resourceType.trim()) 
 							|| Objects.equals(e.getResourceType().toLowerCase(), resourceType.trim().toLowerCase()))
 					.toList();
+		}
+
+		public List<Employee> getDeployedEmployees() {
+			try {
+				List<Employee> employees = employeeRepository.findByDeployedStatusTrue();
+				if (employees == null) {
+					return new ArrayList<>();
+				}
+				return employees;
+			} catch (Exception e) {
+				throw new RuntimeException("Error fetching deployed employees: " + e.getMessage());
+			}
 		}
 
 	}

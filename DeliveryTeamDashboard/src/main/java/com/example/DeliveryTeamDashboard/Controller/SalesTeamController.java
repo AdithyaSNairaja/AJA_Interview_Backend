@@ -58,7 +58,6 @@ public class SalesTeamController {
 	        return salesTeamService.getCandidates(technology, status, resourceType);
 	    }
 
-
 	    @PostMapping("/interviews/schedule")
 	    @PreAuthorize("hasRole('SALES_TEAM')")
 	    public ResponseEntity<?> scheduleInterview(
@@ -265,7 +264,6 @@ public class SalesTeamController {
 
 
 	    @GetMapping("/employees/deployed")
-	    @PreAuthorize("hasAnyRole('SALES_TEAM', 'DELIVERY_TEAM', 'EMPLOYEE', 'ADMIN')") // Accessible by all roles
 	    public ResponseEntity<List<Employee>> getDeployedEmployees() {
 	        List<Employee> deployedEmployees = salesTeamService.getDeployedEmployees();
 	        return ResponseEntity.ok(deployedEmployees);
