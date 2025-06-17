@@ -179,6 +179,14 @@
 			return employeeRepository.save(employee);
 		}
 	
+		public Employee getEmployeeById(Long employeeId) {
+			if (employeeId == null) {
+				throw new IllegalArgumentException("Employee ID cannot be null");
+			}
+			return employeeRepository.findById(employeeId)
+					.orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
+		}
+	
 		public List<JobDescription> getJobDescriptions(String search, String technology, String resourceType) {
 			if (search != null && !search.trim().isEmpty()) {
 				return jobDescriptionRepository.findByTitleContainingIgnoreCaseOrClientContainingIgnoreCase(search.trim(),
@@ -363,7 +371,7 @@
 
 		public List<Employee> getDeployedEmployees() {
 			try {
-				List<Employee> employees = employeeRepository.findByDeployedStatusTrue();
+				List<Employee> employees = employeeRepository.findByDeployedTrue();
 				if (employees == null) {
 					return new ArrayList<>();
 				}

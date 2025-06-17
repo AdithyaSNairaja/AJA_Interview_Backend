@@ -114,9 +114,12 @@ public class JwtUtil {
     private static final String SECRET_KEY = "yQoLgh5CXQ3t7SgTwkUnCjOmBN8s2gqytgSbJ2vAe5YnhcOgBZtkJ35bHlplWjC5bJTKAeXRLS4xcDLCtyCZkA==";
     private static final long JWT_EXPIRATION_MS = 3600000; // 1 hour
 
-    public String generateToken(String email, String role) {
+    public String generateToken(String email, String role, Long employeeId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        if (employeeId != null) {
+            claims.put("employeeId", employeeId);
+        }
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(email)
@@ -126,12 +129,20 @@ public class JwtUtil {
                 .compact();
     }
 
+    public String generateToken(String email, String role) {
+        return generateToken(email, role, null);
+    }
+
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     public String extractRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
+    public Long extractEmployeeId(String token) {
+        return extractClaim(token, claims -> claims.get("employeeId", Long.class));
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

@@ -59,6 +59,19 @@ public class EmployeeController {
          return ResponseEntity.ok(interviews);
      }
      
+     @GetMapping("/{employeeId}")
+     public ResponseEntity<?> getEmployeeDetails(@PathVariable Long employeeId) {
+         try {
+             Employee employee = employeeService.getEmployeeById(employeeId);
+             if (employee == null) {
+                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found");
+             }
+             return ResponseEntity.ok(employee);
+         } catch (IllegalArgumentException e) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+         }
+     }
+
      @PutMapping("/me")
      public ResponseEntity<?> updateEmployeeDetails(
              Authentication authentication,

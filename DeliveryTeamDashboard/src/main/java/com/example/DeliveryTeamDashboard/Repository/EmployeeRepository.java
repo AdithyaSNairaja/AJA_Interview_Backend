@@ -10,7 +10,7 @@ import com.example.DeliveryTeamDashboard.Entity.Employee;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
-	Optional<Employee> findByUserEmail(String email);
+	Optional<Employee> findByUser_Email(String email);
     List<Employee> findByTechnology(String technology);
     List<Employee> findByResourceType(String resourceType);
     boolean existsByEmpId(String empId);
