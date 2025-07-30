@@ -344,6 +344,7 @@ public class SalesTeamService {
 	        }
 	        return s3Service.downloadFile(user.getProfilePicS3Key());
 	    }
-
-	    
+        public User getUserByRole(String role) {
+        return userRepository.findByRole("ROLE_SALES_TEAM").orElseThrow(() -> new IllegalArgumentException("User not found with role: " + role));
+    }
 }

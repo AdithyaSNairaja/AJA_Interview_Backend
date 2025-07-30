@@ -165,4 +165,13 @@ public class DeliveryTeamController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
+    @GetMapping("/user")
+    @PreAuthorize("hasRole('DELIVERY_TEAM')")
+    public ResponseEntity<?> getUserByRole() {
+        User user = deliveryTeamService.getUserByRole("ROLE_DELIVERY_TEAM");
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with role: ROLE_DELIVERY_TEAM");
+        }
+        return ResponseEntity.ok(user);
+    }
 }
