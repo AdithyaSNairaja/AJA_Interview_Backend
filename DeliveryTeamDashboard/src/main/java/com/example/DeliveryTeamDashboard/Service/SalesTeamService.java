@@ -3,9 +3,12 @@ package com.example.DeliveryTeamDashboard.Service;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,324 +29,433 @@ import jakarta.mail.MessagingException;
 @Service
 public class SalesTeamService {
 
+    private static final Logger logger = LoggerFactory.getLogger(SalesTeamService.class);
+
 	@Autowired
 	private UserRepository userRepository;
-	
+
 	@Autowired
 	private EmailService emailService;
-	
+
 	private final EmployeeRepository employeeRepository;
-    private final ClientInterviewRepository clientInterviewRepository;
-    private final ClientRepository clientRepository;
-    private final JobDescriptionRepository jobDescriptionRepository;
-    private final S3Service s3Service;
-    private final EmployeeService employeeService;
+	private final ClientInterviewRepository clientInterviewRepository;
+	private final ClientRepository clientRepository;
+	private final JobDescriptionRepository jobDescriptionRepository;
+	private final S3Service s3Service;
+	private final EmployeeService employeeService;
 
-    public SalesTeamService(EmployeeRepository employeeRepository,
-                            ClientInterviewRepository clientInterviewRepository,
-                            ClientRepository clientRepository,
-                            JobDescriptionRepository jobDescriptionRepository,
-                            S3Service s3Service,
-                            EmployeeService employeeService) {
-        this.employeeRepository = employeeRepository;
-        this.clientInterviewRepository = clientInterviewRepository;
-        this.clientRepository = clientRepository;
-        this.jobDescriptionRepository = jobDescriptionRepository;
-        this.s3Service = s3Service;
-        this.employeeService = employeeService;
-    }
+	public SalesTeamService(EmployeeRepository employeeRepository, ClientInterviewRepository clientInterviewRepository,
+			ClientRepository clientRepository, JobDescriptionRepository jobDescriptionRepository, S3Service s3Service,
+			EmployeeService employeeService) {
+		this.employeeRepository = employeeRepository;
+		this.clientInterviewRepository = clientInterviewRepository;
+		this.clientRepository = clientRepository;
+		this.jobDescriptionRepository = jobDescriptionRepository;
+		this.s3Service = s3Service;
+		this.employeeService = employeeService;
+	}
 
-    public List<Employee> getCandidates(String technology, String status, String resourceType) {
-        List<Employee> employees = employeeRepository.findAll();
-        return employees.stream()
-                .filter(e -> "all".equalsIgnoreCase(technology) || e.getTechnology().equalsIgnoreCase(technology))
-                .filter(e -> "all".equalsIgnoreCase(status) || e.getStatus().equalsIgnoreCase(status))
-                .filter(e -> "all".equalsIgnoreCase(resourceType) || e.getResourceType().equalsIgnoreCase(resourceType))
-                .filter(Employee::getSentToSales)
-                .collect(Collectors.toList());
-    }
-    
+	public List<Employee> getCandidates(String technology, String status, String resourceType) {
+		List<Employee> employees = employeeRepository.findAll();
+		return employees.stream()
+				.filter(e -> "all".equalsIgnoreCase(technology) || e.getTechnology().equalsIgnoreCase(technology))
+				.filter(e -> "all".equalsIgnoreCase(status) || e.getStatus().equalsIgnoreCase(status))
+				.filter(e -> "all".equalsIgnoreCase(resourceType) || e.getResourceType().equalsIgnoreCase(resourceType))
+				.filter(Employee::getSentToSales).collect(Collectors.toList());
+	}
 
-    public ClientInterview scheduleClientInterview(String empId, String client, LocalDate date, LocalTime time, Integer level, String jobDescriptionTitle, String meetingLink, Boolean deployedStatus) {
-    	Employee employee = employeeRepository.findByEmpId(empId)
-                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
-       
-    	try {
-			emailService.sendClientInterviewNotification(employee.getUser().getEmail(),employee.getUser().getFullName(),client,date,time,level,jobDescriptionTitle,meetingLink);
-		} catch (MessagingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+//    public ClientInterview scheduleClientInterview(String empId, String client, LocalDate date, LocalTime time, Integer level, String jobDescriptionTitle, String meetingLink, Boolean deployedStatus) {
+//    	Employee employee = employeeRepository.findByEmpId(empId)
+//                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
+//       
+//    	try {
+//			emailService.sendClientInterviewNotification(employee.getUser().getEmail(),employee.getUser().getFullName(),client,date,time,level,jobDescriptionTitle,meetingLink);
+//		} catch (MessagingException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//    	
+//        if (!Boolean.TRUE.equals(employee.getSentToSales())) {
+//            throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first.");
+//        }
+//
+//        return (ClientInterview) employeeService.scheduleInterview(empId, "client", date, time, client, null, level, jobDescriptionTitle, meetingLink, deployedStatus);
+//        
+//    }
+
+	public ClientInterview scheduleClientInterview(String empId, String client, LocalDate date, LocalTime time,
+			Integer level, String jobDescriptionTitle, String meetingLink, Boolean deployedStatus, MultipartFile file)
+			throws IOException {
+		Employee employee = employeeRepository.findByEmpId(empId)
+				.orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
+
+		if (!Boolean.TRUE.equals(employee.getSentToSales())) {
+			throw new IllegalArgumentException("Employee with ID: " + empId
+					+ " is not eligible for client interviews. Must be sent to sales first.");
 		}
-    	
-        if (!Boolean.TRUE.equals(employee.getSentToSales())) {
-            throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first.");
-        }
 
-        return (ClientInterview) employeeService.scheduleInterview(empId, "client", date, time, client, null, level, jobDescriptionTitle, meetingLink, deployedStatus);
-        
-    }
+		// Upload file to S3 and generate presigned URL if file is provided
+		String presignedUrl = null;
+		if (file != null && !file.isEmpty()) {
+			String s3Key = s3Service.uploadFile(file, "client-interview-files");
+			presignedUrl = s3Service.generatePresignedUrl(s3Key);
+		}
 
-    public ClientInterview updateClientInterview(Long interviewId, String result, String feedback, Integer technicalScore, Integer communicationScore, Boolean deployedStatus) {
-        ClientInterview interview = clientInterviewRepository.findById(interviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
-        interview.setResult(result);
-        interview.setFeedback(feedback);
-        interview.setTechnicalScore(technicalScore);
-        interview.setCommunicationScore(communicationScore);
-        interview.setStatus("completed");
-        
-        if ("pass".equalsIgnoreCase(result) && (deployedStatus == null || !deployedStatus)) {
-            Integer currentLevel = interview.getLevel();
-            if (currentLevel != null) {
-                interview.setLevel(currentLevel + 1);
-            } else {
-                interview.setLevel(1); // Default to level 1 if null
-            }
-        }
-        
-        if (deployedStatus != null) {
-            interview.setDeployedStatus(deployedStatus);
-            if (deployedStatus) {
-                Employee employee = interview.getEmployee();
-                if (employee != null) {
-                    employee.setDeployed(true);
-                    employeeRepository.save(employee);
-                }
-            }
-        }
-        ClientInterview savedInterview = clientInterviewRepository.save(interview);
+		// Find client to get contact email
+		Client clientEntity = clientRepository.findByName(client)
+				.orElseThrow(() -> new IllegalArgumentException("Client not found with name: " + client));
 
-        try {
-            Employee employee = interview.getEmployee();
-            if (employee != null && employee.getUser() != null) {
-                String employeeEmail = employee.getUser().getEmail();
-                String employeeName = employee.getUser().getFullName();
-                String client = interview.getClient();
-                LocalDate date = interview.getDate();
-                LocalTime time = interview.getTime();
+		try {
+			emailService.sendClientInterviewNotification(employee.getUser().getEmail(),
+					employee.getUser().getFullName(), client, date, time, level, jobDescriptionTitle, meetingLink,
+					clientEntity.getContactEmail(), presignedUrl);
+		} catch (MessagingException e) {
+			System.err.println("Failed to send client interview notification: " + e.getMessage());
+		}
 
-                emailService.sendClientInterviewFeedbackNotification(
-                    employeeEmail,
-                    employeeName,
-                    client,
-                    date,
-                    time,
-                    result,
-                    feedback,
-                    technicalScore,
-                    communicationScore,
-                    interview.getLevel()
-                );
-            }
-        } catch (MessagingException e) {
-            System.err.println("Failed to send client interview feedback email notification: " + e.getMessage());
-        }
+		return (ClientInterview) employeeService.scheduleInterview(empId, "client", date, time, client, null, level,
+				jobDescriptionTitle, meetingLink, deployedStatus);
+	}
 
-        return savedInterview;
-    }
+	public ClientInterview updateClientInterview(Long interviewId, String result, String feedback,
+			Integer technicalScore, Integer communicationScore, Boolean deployedStatus) {
+		ClientInterview interview = clientInterviewRepository.findById(interviewId)
+				.orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
+		interview.setResult(result);
+		interview.setFeedback(feedback);
+		interview.setTechnicalScore(technicalScore);
+		interview.setCommunicationScore(communicationScore);
+		interview.setStatus("completed");
 
+		if ("pass".equalsIgnoreCase(result) && (deployedStatus == null || !deployedStatus)) {
+			Integer currentLevel = interview.getLevel();
+			if (currentLevel != null) {
+				interview.setLevel(currentLevel + 1);
+			} else {
+				interview.setLevel(1); // Default to level 1 if null
+			}
+		}
 
-    public List<ClientInterview> getClientInterviews(String search) {
-        if (search != null && !search.isEmpty()) {
-            return clientInterviewRepository.findByClientContainingIgnoreCase(search);
-        }
-        return clientInterviewRepository.findAll();
-    }
+		if (deployedStatus != null) {
+			interview.setDeployedStatus(deployedStatus);
+			if (deployedStatus) {
+				Employee employee = interview.getEmployee();
+				if (employee != null) {
+					employee.setDeployed(true);
+					employeeRepository.save(employee);
+				}
+			}
+		}
+		ClientInterview savedInterview = clientInterviewRepository.save(interview);
 
-    public Client addClient(String name, String contactEmail, Integer activePositions, List<String> technologies) {
-        Client client = new Client();
-        client.setName(name);
-        client.setContactEmail(contactEmail);
-        client.setActivePositions(activePositions);
-        client.setTechnologies(technologies);
-        return clientRepository.save(client);
-    }
+		try {
+			Employee employee = interview.getEmployee();
+			if (employee != null && employee.getUser() != null) {
+				String employeeEmail = employee.getUser().getEmail();
+				String employeeName = employee.getUser().getFullName();
+				String client = interview.getClient();
+				LocalDate date = interview.getDate();
+				LocalTime time = interview.getTime();
 
-    public List<Client> getClients(String search) {
-        if (search != null && !search.isEmpty()) {
-            return clientRepository.findByNameContainingIgnoreCase(search);
-        }
-        return clientRepository.findAll();
-    }
+				emailService.sendClientInterviewFeedbackNotification(employeeEmail, employeeName, client, date, time,
+						result, feedback, technicalScore, communicationScore, interview.getLevel());
+			}
+		} catch (MessagingException e) {
+			System.err.println("Failed to send client interview feedback email notification: " + e.getMessage());
+		}
 
-    public ClientInterview getClientInterviewById(Long interviewId) {
-        return clientInterviewRepository.findById(interviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
-    }
+		return savedInterview;
+	}
 
-    public JobDescription uploadJobDescription(String title, String client, LocalDate receivedDate,
-                                              LocalDate deadline, String technology, String resourceType,
-                                              String description, MultipartFile file) throws IOException {
-        String s3Key = file != null ? s3Service.uploadFile(file, "job-descriptions") : null;
-        JobDescription jd = new JobDescription();
-        jd.setTitle(title);
-        jd.setClient(client);
-        jd.setReceivedDate(receivedDate);
-        jd.setDeadline(deadline);
-        jd.setTechnology(technology);
-        jd.setResourceType(resourceType);
-        jd.setDescription(description);
-        jd.setS3Key(s3Key);
-        return jobDescriptionRepository.save(jd);
-    }
+	public List<ClientInterview> getClientInterviews(String search) {
+		if (search != null && !search.isEmpty()) {
+			return clientInterviewRepository.findByClientContainingIgnoreCase(search);
+		}
+		return clientInterviewRepository.findAll();
+	}
 
-    public byte[] downloadJobDescription(Long jdId) throws IOException {
-        JobDescription jd = jobDescriptionRepository.findById(jdId)
-                .orElseThrow(() -> new IllegalArgumentException("Job Description not found with ID: " + jdId));
-        if (jd.getS3Key() == null) {
-            throw new IllegalArgumentException("No file associated with this Job Description");
-        }
-        return s3Service.downloadFile(jd.getS3Key());
-    }
+	public Client addClient(String name, String contactEmail, Integer activePositions, List<String> technologies) {
+		Client client = new Client();
+		client.setName(name);
+		client.setContactEmail(contactEmail);
+		client.setActivePositions(activePositions);
+		client.setTechnologies(technologies);
+		return clientRepository.save(client);
+	}
 
-    public void deleteJobDescription(Long jdId) {
-        JobDescription jd = jobDescriptionRepository.findById(jdId)
-                .orElseThrow(() -> new IllegalArgumentException("Job Description not found with ID: " + jdId));
-        if (jd.getS3Key() != null) {
-            s3Service.deleteFile(jd.getS3Key());
-        }
-        jobDescriptionRepository.delete(jd);
-    }
+	public List<Client> getClients(String search) {
+		if (search != null && !search.isEmpty()) {
+			return clientRepository.findByNameContainingIgnoreCase(search);
+		}
+		return clientRepository.findAll();
+	}
 
-    public List<JobDescription> getAllJobDescriptions() {
-        return jobDescriptionRepository.findAll();
-    }
+	public ClientInterview getClientInterviewById(Long interviewId) {
+		return clientInterviewRepository.findById(interviewId)
+				.orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
+	}
 
-    public List<Employee> getDeployedEmployees() {
-        return employeeRepository.findByDeployedTrue();
-    }
-    
-    
-    public List<ClientInterview> scheduleMultipleClientInterviews(String empId, List<ClientInterviewSchedule> schedules) {
+	public JobDescription uploadJobDescription(String title, String client, LocalDate receivedDate, LocalDate deadline,
+			String technology, String resourceType, String description, MultipartFile file) throws IOException {
+		String s3Key = file != null ? s3Service.uploadFile(file, "job-descriptions") : null;
+		JobDescription jd = new JobDescription();
+		jd.setTitle(title);
+		jd.setClient(client);
+		jd.setReceivedDate(receivedDate);
+		jd.setDeadline(deadline);
+		jd.setTechnology(technology);
+		jd.setResourceType(resourceType);
+		jd.setDescription(description);
+		jd.setS3Key(s3Key);
+		return jobDescriptionRepository.save(jd);
+	}
+
+	public byte[] downloadJobDescription(Long jdId) throws IOException {
+		JobDescription jd = jobDescriptionRepository.findById(jdId)
+				.orElseThrow(() -> new IllegalArgumentException("Job Description not found with ID: " + jdId));
+		if (jd.getS3Key() == null) {
+			throw new IllegalArgumentException("No file associated with this Job Description");
+		}
+		return s3Service.downloadFile(jd.getS3Key());
+	}
+
+	public void deleteJobDescription(Long jdId) {
+		JobDescription jd = jobDescriptionRepository.findById(jdId)
+				.orElseThrow(() -> new IllegalArgumentException("Job Description not found with ID: " + jdId));
+		if (jd.getS3Key() != null) {
+			s3Service.deleteFile(jd.getS3Key());
+		}
+		jobDescriptionRepository.delete(jd);
+	}
+
+	public List<JobDescription> getAllJobDescriptions() {
+		return jobDescriptionRepository.findAll();
+	}
+
+	public List<Employee> getDeployedEmployees() {
+		return employeeRepository.findByDeployedTrue();
+	}
+
+//	public List<ClientInterview> scheduleMultipleClientInterviews(String empId, List<ClientInterviewSchedule> schedules) {
+//		if (empId == null || empId.trim().isEmpty()) {
+//			throw new IllegalArgumentException("Employee ID cannot be null or empty");
+//		}
+//		if (schedules == null || schedules.isEmpty()) {
+//			throw new IllegalArgumentException("Schedules list cannot be null or empty");
+//		}
+//		
+//		Employee employee = employeeRepository.findByEmpId(empId)
+//				.orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
+//		
+//		if (!Boolean.TRUE.equals(employee.getSentToSales())) {
+//			throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first.");
+//		}
+//
+//		return schedules.stream()
+//				.map(schedule -> {
+//					try {
+//						return scheduleClientInterview(
+//								empId,
+//								schedule.getClient(),
+//								schedule.getDate(),
+//								schedule.getTime(),
+//								schedule.getLevel(),
+//								schedule.getJobDescriptionTitle(),
+//								schedule.getMeetingLink(),
+//								schedule.getDeployedStatus(),
+//								null);
+//					} catch (IOException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//					return null;
+//				}) // File handling not supported in multiple scheduling
+//				.collect(Collectors.toList());
+//	}
+	public List<ClientInterview> scheduleMultipleClientInterviews(String empId, List<ClientInterviewSchedule> schedules) {
         if (empId == null || empId.trim().isEmpty()) {
+            logger.error("Employee ID is null or empty");
             throw new IllegalArgumentException("Employee ID cannot be null or empty");
         }
         if (schedules == null || schedules.isEmpty()) {
+            logger.error("Schedules list is null or empty");
             throw new IllegalArgumentException("Schedules list cannot be null or empty");
         }
-        
+
         Employee employee = employeeRepository.findByEmpId(empId)
-                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
-        
+                .orElseThrow(() -> {
+                    logger.error("Employee not found with ID: {}", empId);
+                    return new IllegalArgumentException("Employee not found with ID: " + empId);
+                });
+
         if (!Boolean.TRUE.equals(employee.getSentToSales())) {
+            logger.error("Employee with ID: {} is not eligible for client interviews. Must be sent to sales first.", empId);
             throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first.");
         }
 
-        return schedules.stream()
-                .map(schedule -> scheduleClientInterview(
-                        empId,
-                        schedule.getClient(),
-                        schedule.getDate(),
-                        schedule.getTime(),
-                        schedule.getLevel(),
-                        schedule.getJobDescriptionTitle(),
-                        schedule.getMeetingLink(),
-                        schedule.getDeployedStatus()))
+        List<String> errors = new ArrayList<>();
+        List<ClientInterview> interviews = schedules.stream()
+                .map(schedule -> {
+                    // Validate schedule fields
+                    if (schedule.getClient() == null || schedule.getClient().trim().isEmpty()) {
+                        errors.add("Client is required for schedule at " + schedule.getDate() + " " + schedule.getTime());
+                        return null;
+                    }
+                    if (schedule.getDate() == null) {
+                        errors.add("Date is required for schedule with client " + schedule.getClient());
+                        return null;
+                    }
+                    if (schedule.getTime() == null) {
+                        errors.add("Time is required for schedule with client " + schedule.getClient());
+                        return null;
+                    }
+                    if (schedule.getLevel() == null) {
+                        errors.add("Level is required for schedule with client " + schedule.getClient());
+                        return null;
+                    }
+                    if (schedule.getJobDescriptionTitle() == null || schedule.getJobDescriptionTitle().trim().isEmpty()) {
+                        errors.add("Job description title is required for schedule with client " + schedule.getClient());
+                        return null;
+                    }
+                    if (schedule.getMeetingLink() == null || schedule.getMeetingLink().trim().isEmpty()) {
+                        errors.add("Meeting link is required for schedule with client " + schedule.getClient());
+                        return null;
+                    }
+
+                    try {
+                        logger.info("Scheduling client interview for employee ID: {} with client: {} on {} at {}", 
+                                    empId, schedule.getClient(), schedule.getDate(), schedule.getTime());
+                        return scheduleClientInterview(
+                                empId,
+                                schedule.getClient(),
+                                schedule.getDate(),
+                                schedule.getTime(),
+                                schedule.getLevel(),
+                                schedule.getJobDescriptionTitle(),
+                                schedule.getMeetingLink(),
+                                schedule.getDeployedStatus(),
+                                null);
+                    } catch (IllegalArgumentException | IOException e) {
+                        logger.error("Failed to schedule interview for employee ID: {} with client: {}: {}", 
+                                     empId, schedule.getClient(), e.getMessage());
+                        errors.add("Failed to schedule interview for client " + schedule.getClient() + ": " + e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(interview -> interview != null)
                 .collect(Collectors.toList());
+
+        if (!errors.isEmpty()) {
+            logger.error("Errors occurred while scheduling multiple client interviews: {}", String.join("; ", errors));
+            throw new IllegalArgumentException("Failed to schedule some interviews: " + String.join("; ", errors));
+        }
+
+        logger.info("Successfully scheduled {} client interviews for employee ID: {}", interviews.size(), empId);
+        return interviews;
     }
-    
-    	public static class ClientInterviewSchedule {
-        private String client;
-        private LocalDate date;
-        private LocalTime time;
-        private Integer level;
-        private String jobDescriptionTitle;
-        private String meetingLink;
-        private Boolean deployedStatus;
 
-        // Getters and setters
-        public String getClient() {
-            return client;
-        }
+	public static class ClientInterviewSchedule {
+		private String client;
+		private LocalDate date;
+		private LocalTime time;
+		private Integer level;
+		private String jobDescriptionTitle;
+		private String meetingLink;
+		private Boolean deployedStatus;
 
-        public void setClient(String client) {
-            this.client = client;
-        }
+		// Getters and setters
+		public String getClient() {
+			return client;
+		}
 
-        public LocalDate getDate() {
-            return date;
-        }
+		public void setClient(String client) {
+			this.client = client;
+		}
 
-        public void setDate(LocalDate date) {
-            this.date = date;
-        }
+		public LocalDate getDate() {
+			return date;
+		}
 
-        public LocalTime getTime() {
-            return time;
-        }
+		public void setDate(LocalDate date) {
+			this.date = date;
+		}
 
-        public void setTime(LocalTime time) {
-            this.time = time;
-        }
+		public LocalTime getTime() {
+			return time;
+		}
 
-        public Integer getLevel() {
-            return level;
-        }
+		public void setTime(LocalTime time) {
+			this.time = time;
+		}
 
-        public void setLevel(Integer level) {
-            this.level = level;
-        }
+		public Integer getLevel() {
+			return level;
+		}
 
-        public String getJobDescriptionTitle() {
-            return jobDescriptionTitle;
-        }
+		public void setLevel(Integer level) {
+			this.level = level;
+		}
 
-        public void setJobDescriptionTitle(String jobDescriptionTitle) {
-            this.jobDescriptionTitle = jobDescriptionTitle;
-        }
+		public String getJobDescriptionTitle() {
+			return jobDescriptionTitle;
+		}
 
-        public String getMeetingLink() {
-            return meetingLink;
-        }
+		public void setJobDescriptionTitle(String jobDescriptionTitle) {
+			this.jobDescriptionTitle = jobDescriptionTitle;
+		}
 
-        public void setMeetingLink(String meetingLink) {
-            this.meetingLink = meetingLink;
-        }
+		public String getMeetingLink() {
+			return meetingLink;
+		}
 
-        public Boolean getDeployedStatus() {
-            return deployedStatus;
-        }
+		public void setMeetingLink(String meetingLink) {
+			this.meetingLink = meetingLink;
+		}
 
-        public void setDeployedStatus(Boolean deployedStatus) {
-            this.deployedStatus = deployedStatus;
-        }
-    }
-    	public User updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
-	        if (employeeId == null) {
-	            throw new IllegalArgumentException("User ID cannot be null");
-	        }
-	        if (file == null || file.isEmpty()) {
-	            throw new IllegalArgumentException("Profile picture file cannot be null or empty");
-	        }
-	        String contentType = file.getContentType();
-	        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
-	            throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
-	        }
+		public Boolean getDeployedStatus() {
+			return deployedStatus;
+		}
 
-	        User user =userRepository.findById(employeeId)
-	                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+		public void setDeployedStatus(Boolean deployedStatus) {
+			this.deployedStatus = deployedStatus;
+		}
+	}
 
-	        // Delete existing profile picture from S3 if it exists
-	        if (user.getProfilePicS3Key() != null) {
-	            s3Service.deleteFile(user.getProfilePicS3Key());
-	        }
+	public User updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
+		if (employeeId == null) {
+			throw new IllegalArgumentException("User ID cannot be null");
+		}
+		if (file == null || file.isEmpty()) {
+			throw new IllegalArgumentException("Profile picture file cannot be null or empty");
+		}
+		String contentType = file.getContentType();
+		if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+			throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
+		}
 
-	        String s3Key = s3Service.uploadFile(file, "profile-pictures");
-	        user.setProfilePicS3Key(s3Key);
-	        return userRepository.save(user);
-	    }
+		User user = userRepository.findById(employeeId)
+				.orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
 
-	    public byte[] getProfilePicture(Long employeeId) throws IOException {
-	        if (employeeId == null) {
-	            throw new IllegalArgumentException("Employee ID cannot be null");
-	        }
-	        User user = userRepository.findById(employeeId)
-	                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
-	        if (user.getProfilePicS3Key() == null) {
-	            throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
-	        }
-	        return s3Service.downloadFile(user.getProfilePicS3Key());
-	    }
+		// Delete existing profile picture from S3 if it exists
+		if (user.getProfilePicS3Key() != null) {
+			s3Service.deleteFile(user.getProfilePicS3Key());
+		}
 
-	    
+		String s3Key = s3Service.uploadFile(file, "profile-pictures");
+		user.setProfilePicS3Key(s3Key);
+		return userRepository.save(user);
+	}
+
+	public byte[] getProfilePicture(Long employeeId) throws IOException {
+		if (employeeId == null) {
+			throw new IllegalArgumentException("Employee ID cannot be null");
+		}
+		User user = userRepository.findById(employeeId)
+				.orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+		if (user.getProfilePicS3Key() == null) {
+			throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
+		}
+		return s3Service.downloadFile(user.getProfilePicS3Key());
+	}
+
 }

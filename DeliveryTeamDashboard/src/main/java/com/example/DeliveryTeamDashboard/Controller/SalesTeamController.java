@@ -58,37 +58,43 @@ public class SalesTeamController {
 	        return salesTeamService.getCandidates(technology, status, resourceType);
 	    }
 
-	    @PostMapping("/interviews/schedule")
-	    @PreAuthorize("hasRole('SALES_TEAM')")
-	    public ResponseEntity<?> scheduleInterview(
-	            Authentication authentication,
-	            @RequestParam String empId,
-	            @RequestParam String interviewType,
-	            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-	            @RequestParam @DateTimeFormat(pattern = "HH:mm:ss") LocalTime time,
-	            @RequestParam(required = false) String client,
-	            @RequestParam(required = false) String interviewer,
-	            @RequestParam(required = false) Integer level,
-	            @RequestParam(required = false) String jobDescriptionTitle,
-	            @RequestParam(required = false) String meetingLink,
-	            @RequestParam(required = false, defaultValue = "false") Boolean deployedStatus) {
-	        if (authentication == null || !authentication.isAuthenticated()) {
-	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-	        }
-	        if (!"client".equalsIgnoreCase(interviewType)) {
-	            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Sales team can only schedule client interviews");
-	        }
-	        if (client == null || level == null || jobDescriptionTitle == null || meetingLink == null) {
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Client, level, job description title, and meeting link are required for client interviews");
-	        }
-	        try {
-	            ClientInterview interview = salesTeamService.scheduleClientInterview(empId, client, date, time, level, jobDescriptionTitle, meetingLink, deployedStatus);
-	            return ResponseEntity.status(HttpStatus.CREATED).body(interview);
-	        } catch (IllegalArgumentException e) {
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-	        }
-	    }
 
+
+	    
+	    @PostMapping("/interviews/schedule")
+		@PreAuthorize("hasRole('SALES_TEAM')")
+		public ResponseEntity<?> scheduleInterview(
+				Authentication authentication,
+				@RequestParam String empId,
+				@RequestParam String interviewType,
+				@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+				@RequestParam @DateTimeFormat(pattern = "HH:mm:ss") LocalTime time,
+				@RequestParam(required = false) String client,
+				@RequestParam(required = false) String interviewer,
+				@RequestParam(required = false) Integer level,
+				@RequestParam(required = false) String jobDescriptionTitle,
+				@RequestParam(required = false) String meetingLink,
+				@RequestParam(required = false, defaultValue = "false") Boolean deployedStatus,
+				@RequestParam(required = false) MultipartFile file) {
+			if (authentication == null || !authentication.isAuthenticated()) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+			}
+			if (!"client".equalsIgnoreCase(interviewType)) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Sales team can only schedule client interviews");
+			}
+			if (client == null || level == null || jobDescriptionTitle == null || meetingLink == null) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Client, level, job description title, and meeting link are required for client interviews");
+			}
+			try {
+				ClientInterview interview = salesTeamService.scheduleClientInterview(empId, client, date, time, level, jobDescriptionTitle, meetingLink, deployedStatus, file);
+				return ResponseEntity.status(HttpStatus.CREATED).body(interview);
+			} catch (IllegalArgumentException e) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+			} catch (IOException e) {
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file: " + e.getMessage());
+			}
+		}
+	    
 	    @PutMapping("/client-interviews/{interviewId}")
 	    @PreAuthorize("hasRole('SALES_TEAM')")
 	    public ResponseEntity<?> updateClientInterview(

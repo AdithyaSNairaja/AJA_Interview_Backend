@@ -67,39 +67,58 @@ public class EmailService {
 		sendEmail(interviewerEmail, subject, interviewerBody, true);
 	}
 
+//	public void sendClientInterviewNotification(String employeeEmail, String employeeName, String client,
+//			LocalDate date, LocalTime time, Integer level, String jobDescriptionTitle, String meetingLink)
+//			throws MessagingException {
+//		String subject = "Client Interview Scheduled - " + date.toString();
+//		String employeeBody = String.format(
+//				"<h3>Client Interview Scheduled</h3>" + "<p>Dear %s,</p>"
+//						+ "<p>You have a client interview scheduled with %s on %s at %s.</p>"
+//						+ "<p><strong>Details:</strong></p>" + "<ul>" + "<li><strong>Level:</strong> %d</li>"
+//						+ "<li><strong>Job Description:</strong> %s</li>"
+//						+ "<li><strong>Meeting Link:</strong> <a href='%s'>Join Meeting</a></li>" + "</ul>"
+//						+ "<p>Please prepare thoroughly and ensure you are available at the scheduled time.</p>"
+//						+ "<p>Best regards,<br>Sales Team</p>",
+//				employeeName, client, date.toString(), time.toString(), level, jobDescriptionTitle, meetingLink);
+//		sendEmail(employeeEmail, subject, employeeBody, true);
+//	}
+	
 	public void sendClientInterviewNotification(String employeeEmail, String employeeName, String client,
-			LocalDate date, LocalTime time, Integer level, String jobDescriptionTitle, String meetingLink)
-			throws MessagingException {
+			LocalDate date, LocalTime time, Integer level, String jobDescriptionTitle, String meetingLink,
+			String clientEmail, String fileUrl) throws MessagingException {
 		String subject = "Client Interview Scheduled - " + date.toString();
+		String fileLink = fileUrl != null && !fileUrl.isEmpty()
+			? String.format("<p><strong>Attached File:</strong> <a href='%s'>Download File</a></p>", fileUrl)
+			: "<p>No file attached.</p>";
+
 		String employeeBody = String.format(
 				"<h3>Client Interview Scheduled</h3>" + "<p>Dear %s,</p>"
 						+ "<p>You have a client interview scheduled with %s on %s at %s.</p>"
 						+ "<p><strong>Details:</strong></p>" + "<ul>" + "<li><strong>Level:</strong> %d</li>"
 						+ "<li><strong>Job Description:</strong> %s</li>"
 						+ "<li><strong>Meeting Link:</strong> <a href='%s'>Join Meeting</a></li>" + "</ul>"
+						+ "%s"
 						+ "<p>Please prepare thoroughly and ensure you are available at the scheduled time.</p>"
 						+ "<p>Best regards,<br>Sales Team</p>",
-				employeeName, client, date.toString(), time.toString(), level, jobDescriptionTitle, meetingLink);
+				employeeName, client, date.toString(), time.toString(), level, jobDescriptionTitle, meetingLink, fileLink);
+
+		String clientBody = String.format(
+				"<h3>Client Interview Scheduled</h3>" + "<p>Dear %s Contact,</p>"
+						+ "<p>We have scheduled an interview with our candidate %s on %s at %s.</p>"
+						+ "<p><strong>Details:</strong></p>" + "<ul>" + "<li><strong>Level:</strong> %d</li>"
+						+ "<li><strong>Job Description:</strong> %s</li>"
+						+ "<li><strong>Meeting Link:</strong> <a href='%s'>Join Meeting</a></li>" + "</ul>"
+						+ "%s"
+						+ "<p>Please review the attached file (if any) and prepare for the interview.</p>"
+						+ "<p>Best regards,<br>Sales Team</p>",
+				client, employeeName, date.toString(), time.toString(), level, jobDescriptionTitle, meetingLink, fileLink);
+
 		sendEmail(employeeEmail, subject, employeeBody, true);
+		if (clientEmail != null && !clientEmail.isEmpty()) {
+			sendEmail(clientEmail, subject, clientBody, true);
+		}
 	}
 
-//	public void sendMockInterviewFeedbackNotification(String employeeEmail, String employeeName, LocalDate date,
-//			LocalTime time, String technicalFeedback, String communicationFeedback, Integer technicalScore,
-//			Integer communicationScore) throws MessagingException {
-//		String subject = "Mock Interview Feedback - " + date.toString();
-//		String employeeBody = String.format("<h3>Mock Interview Feedback</h3>" + "<p>Dear %s,</p>"
-//				+ "<p>Your mock interview on %s at %s has been completed. Below is the feedback:</p>"
-//				+ "<p><strong>Technical Feedback:</strong> %s</p>" + "<p><strong>Technical Score:</strong> %d</p>"
-//				+ "<p><strong>Communication Feedback:</strong> %s</p>"
-//				+ "<p><strong>Communication Score:</strong> %d</p>"
-//				+ "<p>Please review the feedback and reach out if you have any questions.</p>"
-//				+ "<p>Best regards,<br>Delivery Team</p>", employeeName, date.toString(), time.toString(),
-//				technicalFeedback, technicalScore, communicationFeedback, communicationScore);
-//
-//		sendEmail(employeeEmail, subject, employeeBody, true);
-//	}
-
-	
 	public void sendMockInterviewFeedbackNotification(String employeeEmail, String employeeName,
             LocalDate date, LocalTime time, String technicalFeedback,
             String communicationFeedback, Integer technicalScore,
