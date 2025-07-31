@@ -2,8 +2,11 @@ package com.example.DeliveryTeamDashboard.Entity;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -54,4 +57,10 @@ public class MockInterview {
     private Boolean sentToSales;
     
     private boolean deployed;
+    
+
+    @ElementCollection
+    @CollectionTable(name = "mock_interview_files", joinColumns = @JoinColumn(name = "interview_id"))
+    @Column(name = "s3_key")
+    private List<String> fileS3Keys; 
 }

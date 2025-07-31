@@ -6,6 +6,8 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -28,12 +30,14 @@ import com.example.DeliveryTeamDashboard.Entity.MockInterview;
 import com.example.DeliveryTeamDashboard.Entity.User;
 import com.example.DeliveryTeamDashboard.Service.DeliveryTeamService;
 import com.example.DeliveryTeamDashboard.Service.EmployeeService;
+import com.example.DeliveryTeamDashboard.Service.S3Service;
 
 
 @RestController
 @RequestMapping("/api/delivery")
 public class DeliveryTeamController {
-    
+	 private static final Logger logger = LoggerFactory.getLogger(S3Service.class);
+
     private final DeliveryTeamService deliveryTeamService;
     private final EmployeeService employeeService;
 
@@ -49,7 +53,8 @@ public class DeliveryTeamController {
         return deliveryTeamService.getEmployees(technology, resourceType);
     }
 
-       @PostMapping("/schedule")
+
+    @PostMapping("/schedule")
     @PreAuthorize("hasRole('DELIVERY_TEAM')")
     public ResponseEntity<?> scheduleInterview(
             Authentication authentication,
@@ -58,10 +63,11 @@ public class DeliveryTeamController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam @DateTimeFormat(pattern = "HH:mm:ss") LocalTime time,
             @RequestParam(required = false) String client,
-            @RequestParam(required = false) Long interviewerId, // Changed to Long
+            @RequestParam(required = false) Long interviewerId,
             @RequestParam(required = false) Integer level,
             @RequestParam(required = false) String jobDescriptionTitle,
-            @RequestParam(required = false) String meetingLink) {
+            @RequestParam(required = false) String meetingLink,
+            @RequestParam(required = false) MultipartFile[] files) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
@@ -69,12 +75,34 @@ public class DeliveryTeamController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Delivery team can only schedule mock interviews");
         }
         try {
-            MockInterview interview = deliveryTeamService.scheduleMockInterview(empId, date, time, interviewerId);
+            MockInterview interview = deliveryTeamService.scheduleMockInterview(empId, date, time, interviewerId, files);
             return ResponseEntity.status(HttpStatus.CREATED).body(interview);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+//    @PutMapping("/mock-interviews/{interviewId}/feedback")
+//    @PreAuthorize("hasRole('DELIVERY_TEAM')")
+//    public ResponseEntity<?> updateMockInterviewFeedback(
+//            Authentication authentication,
+//            @PathVariable Long interviewId,
+//            @RequestParam String technicalFeedback,
+//            @RequestParam String communicationFeedback,
+//            @RequestParam Integer technicalScore,
+//            @RequestParam Integer communicationScore,
+//            @RequestParam Boolean sentToSales
+//            ) {
+//        if (authentication == null || !authentication.isAuthenticated()) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+//        }
+//        try {
+//            MockInterview interview = deliveryTeamService.updateMockInterviewFeedback(interviewId, technicalFeedback,communicationFeedback, technicalScore, communicationScore,sentToSales);
+//            return ResponseEntity.ok(interview);
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+//        }
+//    }
+
     
     @PutMapping("/mock-interviews/{interviewId}/feedback")
     @PreAuthorize("hasRole('DELIVERY_TEAM')")
@@ -85,15 +113,20 @@ public class DeliveryTeamController {
             @RequestParam String communicationFeedback,
             @RequestParam Integer technicalScore,
             @RequestParam Integer communicationScore,
-            @RequestParam Boolean sentToSales
-            ) {
+            @RequestParam Boolean sentToSales,
+            @RequestParam(required = false) MultipartFile file) {
+        logger.info("Received feedback update request for interview ID: {}. File provided: {}", 
+            interviewId, file != null ? file.getOriginalFilename() : "none");
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
         try {
-            MockInterview interview = deliveryTeamService.updateMockInterviewFeedback(interviewId, technicalFeedback,communicationFeedback, technicalScore, communicationScore,sentToSales);
+            MockInterview interview = deliveryTeamService.updateMockInterviewFeedback(
+                interviewId, technicalFeedback, communicationFeedback, technicalScore, 
+                communicationScore, sentToSales, file);
             return ResponseEntity.ok(interview);
         } catch (IllegalArgumentException e) {
+            logger.error("Error updating feedback for interview ID: {}: {}", interviewId, e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
@@ -164,14 +197,5 @@ public class DeliveryTeamController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
-    }
-    @GetMapping("/user")
-    @PreAuthorize("hasRole('DELIVERY_TEAM')")
-    public ResponseEntity<?> getUserByRole() {
-        User user = deliveryTeamService.getUserByRole("ROLE_DELIVERY_TEAM");
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with role: ROLE_DELIVERY_TEAM");
-        }
-        return ResponseEntity.ok(user);
     }
 }
