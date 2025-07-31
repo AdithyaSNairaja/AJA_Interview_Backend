@@ -304,9 +304,4 @@ public class DeliveryTeamService {
 		}).sorted((a, b) -> Integer.compare((Integer) b.get("totalRating"), (Integer) a.get("totalRating")))
 				.collect(Collectors.toList());
 	}
-	
-	public User getUserByRole(String role) {
-        return userRepository.findByRole("ROLE_DELIVERY_TEAM").orElseThrow(() -> new IllegalArgumentException("User not found with role: " + role));
-    }
-
 }

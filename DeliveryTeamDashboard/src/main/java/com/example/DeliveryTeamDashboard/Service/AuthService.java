@@ -1,13 +1,8 @@
 package com.example.DeliveryTeamDashboard.Service;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+// ...existing code...
 
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
+// ...existing code...
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,13 +10,13 @@ import com.example.DeliveryTeamDashboard.Entity.Employee;
 import com.example.DeliveryTeamDashboard.Entity.User;
 import com.example.DeliveryTeamDashboard.Repository.EmployeeRepository;
 import com.example.DeliveryTeamDashboard.Repository.UserRepository;
-import com.example.DeliveryTeamDashboard.config.JwtUtil;
+// ...existing code...
 
 @Service
 public class AuthService {
 
-	
-	private final UserRepository userRepository;
+    
+    private final UserRepository userRepository;
     private final EmployeeRepository employeeRepository;
     private final PasswordEncoder passwordEncoder;
 

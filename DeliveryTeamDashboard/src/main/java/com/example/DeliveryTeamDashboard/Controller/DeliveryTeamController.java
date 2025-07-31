@@ -36,10 +36,12 @@ import com.example.DeliveryTeamDashboard.Service.S3Service;
 @RestController
 @RequestMapping("/api/delivery")
 public class DeliveryTeamController {
-	 private static final Logger logger = LoggerFactory.getLogger(S3Service.class);
+     private static final Logger logger = LoggerFactory.getLogger(S3Service.class);
 
     private final DeliveryTeamService deliveryTeamService;
-    private final EmployeeService employeeService;
+    // private final EmployeeService employeeService; // Removed unused field
+
+    private EmployeeService employeeService;
 
     public DeliveryTeamController(DeliveryTeamService deliveryTeamService, EmployeeService employeeService) {
         this.deliveryTeamService = deliveryTeamService;
@@ -55,7 +57,7 @@ public class DeliveryTeamController {
 
 
     @PostMapping("/schedule")
-    @PreAuthorize("hasRole('DELIVERY_TEAM')")
+    @PreAuthorize("hasAuthority('ROLE_DELIVERY')")
     public ResponseEntity<?> scheduleInterview(
             Authentication authentication,
             @RequestParam String empId,
@@ -105,7 +107,7 @@ public class DeliveryTeamController {
 
     
     @PutMapping("/mock-interviews/{interviewId}/feedback")
-    @PreAuthorize("hasRole('DELIVERY_TEAM')")
+    @PreAuthorize("hasAuthority('ROLE_DELIVERY')")
     public ResponseEntity<?> updateMockInterviewFeedback(
             Authentication authentication,
             @PathVariable Long interviewId,
@@ -142,7 +144,7 @@ public class DeliveryTeamController {
     }
 
     @PutMapping("/mock-interviews/{interviewId}/update-status")
-    @PreAuthorize("hasRole('DELIVERY_TEAM')")
+    @PreAuthorize("hasAuthority('ROLE_DELIVERY')")
     public ResponseEntity<?> updateInterviewStatus(
             Authentication authentication,
             @PathVariable Long interviewId) {
@@ -197,16 +199,5 @@ public class DeliveryTeamController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
-    }
-    @GetMapping("/user")
-    @PreAuthorize("hasRole('DELIVERY_TEAM')")
-    public ResponseEntity<?> getUserByRole() {
-        User user = deliveryTeamService.getUserByRole("ROLE_DELIVERY_TEAM");
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with role: ROLE_DELIVERY_TEAM");
-        }
-        return ResponseEntity.ok(user);
-    
-
     }
 }

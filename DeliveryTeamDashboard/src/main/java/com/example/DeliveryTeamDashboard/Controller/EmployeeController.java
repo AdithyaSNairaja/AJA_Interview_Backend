@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
+// ...existing code...
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,12 +33,12 @@ import com.example.DeliveryTeamDashboard.Service.EmployeeService;
 @RequestMapping("/api/employee")
 public class EmployeeController {
 
-	 private final EmployeeService employeeService;
-     private final EmployeeRepository employeeRepository;
+     private final EmployeeService employeeService;
+     // private final EmployeeRepository employeeRepository; // Removed unused field
 
-     public EmployeeController(EmployeeService employeeService, EmployeeRepository employeeRepository) {
+     public EmployeeController(EmployeeService employeeService) {
          this.employeeService = employeeService;
-         this.employeeRepository = employeeRepository;
+    
      }
 
      @GetMapping("/mock-interviews")

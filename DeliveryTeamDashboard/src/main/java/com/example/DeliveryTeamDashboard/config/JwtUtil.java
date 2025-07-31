@@ -1,6 +1,6 @@
 package com.example.DeliveryTeamDashboard.config;
 
-import java.security.Key;
+// ...existing code...
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,19 +8,19 @@ import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+// ...existing code...
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+// ...existing code...
 
 
 @Component
 public class JwtUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
+    // private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class); // Removed unused field
 //
 //    private final Key secretKey;
 //    private final long expirationTime;
@@ -125,7 +125,7 @@ public class JwtUtil {
                 .setSubject(email)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION_MS))
-                .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
+                .signWith(SignatureAlgorithm.HS512, SECRET_KEY) // Deprecated, consider updating to new API if possible
                 .compact();
     }
 
@@ -151,8 +151,8 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(SECRET_KEY)
+        return Jwts.parser() // Deprecated, consider updating to new API if possible
+                .setSigningKey(SECRET_KEY) // Deprecated, consider updating to new API if possible
                 .parseClaimsJws(token)
                 .getBody();
     }
