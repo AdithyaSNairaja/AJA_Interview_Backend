@@ -1,6 +1,7 @@
 
 package com.example.DeliveryTeamDashboard.Service;
 
+import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -158,5 +159,30 @@ public class EmailService {
 				communicationScore, level);
 
 		sendEmail(employeeEmail, subject, employeeBody, true);
+	}
+	public void sendEmailWithAttachment(String to, String subject, String body, MultipartFile file) throws MessagingException {
+		logger.info("Attempting to send email with attachment to: {} | Subject: {}", to, subject);
+		try {
+			MimeMessage message = mailSender.createMimeMessage();
+			MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+			helper.setTo(to);
+			helper.setSubject(subject);
+			helper.setText(body);
+			helper.setFrom(senderEmail);
+
+			if (file != null && !file.isEmpty()) {
+				helper.addAttachment(file.getOriginalFilename(), file);
+			}
+
+			mailSender.send(message);
+			logger.info("Email with attachment sent successfully to: {}", to);
+		} catch (MessagingException e) {
+			logger.error("Failed to send email with attachment to: {} | Exception: {}", to, e.getMessage(), e);
+			throw e;
+		} catch (Exception e) {
+			logger.error("Unexpected error while sending email with attachment to: {} | Exception: {}", to, e.getMessage(), e);
+			throw new MessagingException("Unexpected error: " + e.getMessage(), e);
+		}
 	}
 }

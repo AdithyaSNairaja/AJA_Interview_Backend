@@ -62,7 +62,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**","/api/delivery/mock-interviews/performance","/api/employee/resumes/{resumeId}/download","/api/employee/resumes/employee/{employeeId}/download","/api/sales/employees/deployed").permitAll()
                 .requestMatchers("/api/employee/**").hasAnyRole("EMPLOYEE", "DELIVERY_TEAM","SALES_TEAM")
                 .requestMatchers("/api/delivery/**").hasAuthority("ROLE_DELIVERY")
-                .requestMatchers("/api/sales/**").hasRole("SALES_TEAM")
+                .requestMatchers("/api/sales/**").hasRole("SALES")
                 .requestMatchers("/api/interviews/**").hasAnyRole("SALES_TEAM", "DELIVERY_TEAM")
                 .anyRequest().authenticated()
             )
