@@ -329,5 +329,14 @@ public class SalesTeamController {
 	             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 	         }
 	     }
+		@GetMapping("/user")
+		@PreAuthorize("hasRole('SALES_TEAM')")
+		public ResponseEntity<?> getUserByRole() {
+			User user = salesTeamService.getUserByRole("ROLE_SALES_TEAM");
+			if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with role: ROLE_SALES_TEAM");
+        }
+        return ResponseEntity.ok(user);
+    }
 
 }
