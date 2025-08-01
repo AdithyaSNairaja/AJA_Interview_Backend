@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 @Service
 public class S3Service {
 
-	 private static final Logger logger = LoggerFactory.getLogger(S3Service.class);
+     private static final Logger logger = LoggerFactory.getLogger(S3Service.class);
 
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
@@ -56,8 +56,15 @@ public class S3Service {
         logger.info("Uploading file: {} to S3 bucket: {}, folder: {}", file.getOriginalFilename(), bucketName, folder);
         try {
             String contentType = file.getContentType();
-            if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
-                throw new IllegalArgumentException("File must be an Excel (.xls, .xlsx), Word (.doc, .docx), PDF (.pdf), or PowerPoint (.ppt, .pptx) file");
+            boolean isProfilePicture = "profile-pictures".equals(folder);
+            if (isProfilePicture) {
+                if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+                    throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
+                }
+            } else {
+                if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
+                    throw new IllegalArgumentException("File must be an Excel (.xls, .xlsx), Word (.doc, .docx), PDF (.pdf), or PowerPoint (.ppt, .pptx) file");
+                }
             }
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)

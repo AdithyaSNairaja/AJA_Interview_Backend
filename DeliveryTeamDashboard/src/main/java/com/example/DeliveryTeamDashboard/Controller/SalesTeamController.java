@@ -6,10 +6,9 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,9 +36,9 @@ import com.example.DeliveryTeamDashboard.Entity.Employee;
 import com.example.DeliveryTeamDashboard.Entity.JobDescription;
 import com.example.DeliveryTeamDashboard.Entity.User;
 import com.example.DeliveryTeamDashboard.Repository.ClientInterviewRepository;
+import com.example.DeliveryTeamDashboard.Service.EmailService;
 import com.example.DeliveryTeamDashboard.Service.SalesTeamService;
 import com.example.DeliveryTeamDashboard.Service.SalesTeamService.ClientInterviewSchedule;
-import com.example.DeliveryTeamDashboard.Service.EmailService;
 
 @RestController
 @RequestMapping("/api/sales")
@@ -326,20 +326,24 @@ public class SalesTeamController {
 	}
 		
 		@PutMapping("/profile-picture")
-		 public ResponseEntity<?> updateProfilePicture(
-				 Authentication authentication,
-				 @RequestParam Long Id,
-				 @RequestParam MultipartFile file) throws IOException {
-			 if (authentication == null || !authentication.isAuthenticated()) {
-				 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-			 }
-			 try {
-				 User user = salesTeamService.updateProfilePicture(Id, file);
-				 return ResponseEntity.status(HttpStatus.OK).body(user);
-			 } catch (IllegalArgumentException | IOException e) {
-				 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-			 }
-		 }
+	public ResponseEntity<?> updateProfilePicture(
+			Authentication authentication,
+			@RequestParam Long Id,
+			@RequestParam MultipartFile file) throws IOException {
+		if (authentication == null || !authentication.isAuthenticated()) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+		}
+		String filename = file.getOriginalFilename();
+		if (filename == null || !(filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg") || filename.toLowerCase().endsWith(".png"))) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
+		}
+		try {
+			User user = salesTeamService.updateProfilePicture(Id, file);
+			return ResponseEntity.status(HttpStatus.OK).body(user);
+		} catch (IllegalArgumentException | IOException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
+	}
 
 		 @GetMapping("/profile-picture/{employeeId}")
 		 public ResponseEntity<?> getProfilePicture(@PathVariable Long employeeId) throws IOException {

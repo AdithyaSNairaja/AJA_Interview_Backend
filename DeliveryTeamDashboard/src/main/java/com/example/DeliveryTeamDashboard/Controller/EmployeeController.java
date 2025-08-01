@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.core.io.ByteArrayResource;
-// ...existing code...
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,7 +25,6 @@ import com.example.DeliveryTeamDashboard.Entity.InterviewQuestion;
 import com.example.DeliveryTeamDashboard.Entity.JobDescription;
 import com.example.DeliveryTeamDashboard.Entity.MockInterview;
 import com.example.DeliveryTeamDashboard.Entity.Resume;
-import com.example.DeliveryTeamDashboard.Repository.EmployeeRepository;
 import com.example.DeliveryTeamDashboard.Service.EmployeeService;
 
 @RestController
@@ -186,6 +184,10 @@ public class EmployeeController {
              @RequestParam MultipartFile file) throws IOException {
          if (authentication == null || !authentication.isAuthenticated()) {
              return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+         }
+         String filename = file.getOriginalFilename();
+         if (filename == null || !(filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg") || filename.toLowerCase().endsWith(".png"))) {
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
          }
          try {
              Employee employee = employeeService.updateProfilePicture(employeeId, file);
