@@ -360,4 +360,22 @@ public class SalesTeamController {
 			 }
 		 }
 
+	@GetMapping("/me")
+	@PreAuthorize("hasRole('SALES')")
+	public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+		if (authentication == null || !authentication.isAuthenticated()) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+		}
+		String email = authentication.getName();
+		try {
+			User user = salesTeamService.getUserByEmail(email);
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+			}
+			return ResponseEntity.ok(user);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
+	}
+
 }

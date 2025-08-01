@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.DeliveryTeamDashboard.Entity.Employee;
 import com.example.DeliveryTeamDashboard.Entity.MockInterview;
 import com.example.DeliveryTeamDashboard.Entity.User;
+import com.example.DeliveryTeamDashboard.Repository.UserRepository;
 import com.example.DeliveryTeamDashboard.Service.DeliveryTeamService;
 import com.example.DeliveryTeamDashboard.Service.EmployeeService;
 import com.example.DeliveryTeamDashboard.Service.S3Service;
@@ -37,6 +39,9 @@ import com.example.DeliveryTeamDashboard.Service.S3Service;
 @RequestMapping("/api/delivery")
 public class DeliveryTeamController {
      private static final Logger logger = LoggerFactory.getLogger(S3Service.class);
+
+    @Autowired
+    private UserRepository userRepository;
 
     private final DeliveryTeamService deliveryTeamService;
     // private final EmployeeService employeeService; // Removed unused field
@@ -204,5 +209,28 @@ public class DeliveryTeamController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
+    }
+    @GetMapping("/me")
+    @PreAuthorize("hasAuthority('ROLE_DELIVERY')")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+        String email = authentication.getName();
+        try {
+            User user = deliveryTeamService.getUserByEmail(email);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+    public User getUserByEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        return userRepository.findByEmail(email).orElse(null);
     }
 }

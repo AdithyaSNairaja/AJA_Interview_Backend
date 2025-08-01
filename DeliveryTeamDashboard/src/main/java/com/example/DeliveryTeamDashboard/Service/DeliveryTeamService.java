@@ -280,6 +280,12 @@ public class DeliveryTeamService {
 		return s3Service.downloadFile(user.getProfilePicS3Key());
 	}
 
+	public User getUserByEmail(String email) {
+		if (email == null || email.isEmpty()) {
+			throw new IllegalArgumentException("Email cannot be null or empty");
+		}
+		return userRepository.findByEmail(email).orElse(null);
+	}
 	public List<Map<String, Object>> getMockInterviewPerformance() {
 		List<MockInterview> completedInterviews = mockInterviewRepository.findByStatus("completed");
 

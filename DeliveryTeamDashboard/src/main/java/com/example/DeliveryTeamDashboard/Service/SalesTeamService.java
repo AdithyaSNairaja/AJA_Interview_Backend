@@ -26,13 +26,13 @@ import jakarta.mail.MessagingException;
 @Service
 public class SalesTeamService {
 
-	@Autowired
-	private UserRepository userRepository;
-	
-	@Autowired
-	private EmailService emailService;
-	
-	private final EmployeeRepository employeeRepository;
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private EmailService emailService;
+    
+    private final EmployeeRepository employeeRepository;
     private final ClientInterviewRepository clientInterviewRepository;
     private final ClientRepository clientRepository;
     private final JobDescriptionRepository jobDescriptionRepository;
@@ -65,22 +65,29 @@ public class SalesTeamService {
     
 
     public ClientInterview scheduleClientInterview(String empId, String client, LocalDate date, LocalTime time, Integer level, String jobDescriptionTitle, String meetingLink, Boolean deployedStatus) {
-    	Employee employee = employeeRepository.findByEmpId(empId)
+        Employee employee = employeeRepository.findByEmpId(empId)
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + empId));
        
-    	try {
-			emailService.sendClientInterviewNotification(employee.getUser().getEmail(),employee.getUser().getFullName(),client,date,time,level,jobDescriptionTitle,meetingLink);
-		} catch (MessagingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
+        try {
+            emailService.sendClientInterviewNotification(employee.getUser().getEmail(),employee.getUser().getFullName(),client,date,time,level,jobDescriptionTitle,meetingLink);
+        } catch (MessagingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
         if (!Boolean.TRUE.equals(employee.getSentToSales())) {
             throw new IllegalArgumentException("Employee with ID: " + empId + " is not eligible for client interviews. Must be sent to sales first.");
         }
 
         return (ClientInterview) employeeService.scheduleInterview(empId, "client", date, time, client, null, level, jobDescriptionTitle, meetingLink, deployedStatus);
         
+    }
+
+    public User getUserByEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     public ClientInterview updateClientInterview(Long interviewId, String result, String feedback, Integer technicalScore, Integer communicationScore, Boolean deployedStatus) {
@@ -242,7 +249,7 @@ public class SalesTeamService {
                 .collect(Collectors.toList());
     }
     
-    	public static class ClientInterviewSchedule {
+        public static class ClientInterviewSchedule {
         private String client;
         private LocalDate date;
         private LocalTime time;
@@ -308,42 +315,42 @@ public class SalesTeamService {
             this.deployedStatus = deployedStatus;
         }
     }
-    	public User updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
-	        if (employeeId == null) {
-	            throw new IllegalArgumentException("User ID cannot be null");
-	        }
-	        if (file == null || file.isEmpty()) {
-	            throw new IllegalArgumentException("Profile picture file cannot be null or empty");
-	        }
-	        String contentType = file.getContentType();
-	        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
-	            throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
-	        }
+        public User updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
+            if (employeeId == null) {
+                throw new IllegalArgumentException("User ID cannot be null");
+            }
+            if (file == null || file.isEmpty()) {
+                throw new IllegalArgumentException("Profile picture file cannot be null or empty");
+            }
+            String contentType = file.getContentType();
+            if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+                throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
+            }
 
-	        User user =userRepository.findById(employeeId)
-	                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+            User user =userRepository.findById(employeeId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
 
-	        // Delete existing profile picture from S3 if it exists
-	        if (user.getProfilePicS3Key() != null) {
-	            s3Service.deleteFile(user.getProfilePicS3Key());
-	        }
+            // Delete existing profile picture from S3 if it exists
+            if (user.getProfilePicS3Key() != null) {
+                s3Service.deleteFile(user.getProfilePicS3Key());
+            }
 
-	        String s3Key = s3Service.uploadFile(file, "profile-pictures");
-	        user.setProfilePicS3Key(s3Key);
-	        return userRepository.save(user);
-	    }
+            String s3Key = s3Service.uploadFile(file, "profile-pictures");
+            user.setProfilePicS3Key(s3Key);
+            return userRepository.save(user);
+        }
 
-	    public byte[] getProfilePicture(Long employeeId) throws IOException {
-	        if (employeeId == null) {
-	            throw new IllegalArgumentException("Employee ID cannot be null");
-	        }
-	        User user = userRepository.findById(employeeId)
-	                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
-	        if (user.getProfilePicS3Key() == null) {
-	            throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
-	        }
-	        return s3Service.downloadFile(user.getProfilePicS3Key());
-	    }
+        public byte[] getProfilePicture(Long employeeId) throws IOException {
+            if (employeeId == null) {
+                throw new IllegalArgumentException("Employee ID cannot be null");
+            }
+            User user = userRepository.findById(employeeId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+            if (user.getProfilePicS3Key() == null) {
+                throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
+            }
+            return s3Service.downloadFile(user.getProfilePicS3Key());
+        }
 
-	    
+        
 }
