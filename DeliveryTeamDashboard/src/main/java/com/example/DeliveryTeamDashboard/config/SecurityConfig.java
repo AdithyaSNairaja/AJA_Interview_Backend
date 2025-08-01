@@ -60,10 +60,10 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**","/api/delivery/mock-interviews/performance","/api/employee/resumes/{resumeId}/download","/api/employee/resumes/employee/{employeeId}/download","/api/sales/employees/deployed").permitAll()
-                .requestMatchers("/api/employee/**").hasAnyRole("EMPLOYEE", "DELIVERY_TEAM","SALES_TEAM")
-                .requestMatchers("/api/delivery/**").hasAuthority("ROLE_DELIVERY")
+                .requestMatchers("/api/employee/**").hasAnyRole("EMPLOYEE", "DELIVERY","SALES")
+                .requestMatchers("/api/delivery/**").hasAuthority("DELIVERY")
                 .requestMatchers("/api/sales/**").hasRole("SALES")
-                .requestMatchers("/api/interviews/**").hasAnyRole("SALES_TEAM", "DELIVERY_TEAM")
+                .requestMatchers("/api/interviews/**").hasAnyRole("SALES", "DELIVERY")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
