@@ -169,8 +169,8 @@ public class DeliveryTeamController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
         try {
-            Employee employee = deliveryTeamService.updateProfilePicture(Id, file);
-            return ResponseEntity.status(HttpStatus.OK).body(employee);
+            User user = deliveryTeamService.updateProfilePicture(Id, file);
+            return ResponseEntity.status(HttpStatus.OK).body(user);
         } catch (IllegalArgumentException | IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }

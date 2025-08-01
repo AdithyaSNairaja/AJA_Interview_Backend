@@ -198,21 +198,15 @@ public class EmployeeController {
      @GetMapping("/profile-picture/{employeeId}")
      public ResponseEntity<?> getProfilePicture(@PathVariable Long employeeId) throws IOException {
          try {
-             System.out.println("Fetching profile picture for employee ID: " + employeeId);
              byte[] fileData = employeeService.getProfilePicture(employeeId);
              ByteArrayResource resource = new ByteArrayResource(fileData);
-             System.out.println("Profile picture found, size: " + fileData.length + " bytes");
              return ResponseEntity.ok()
                      .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=profile-picture.jpg")
                      .contentType(MediaType.IMAGE_JPEG)
                      .contentLength(fileData.length)
                      .body(resource);
-         } catch (IllegalArgumentException e) {
-             System.out.println("Profile picture error: " + e.getMessage());
+         } catch (IllegalArgumentException | IOException e) {
              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-         } catch (IOException e) {
-             System.out.println("IO error fetching profile picture: " + e.getMessage());
-             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error reading profile picture: " + e.getMessage());
          }
      }
 
@@ -228,9 +222,7 @@ public class EmployeeController {
 
      @GetMapping("/deployed")
      public ResponseEntity<List<Employee>> getDeployedEmployees() {
-         System.out.println("Fetching deployed employees from employee controller");
          List<Employee> employees = employeeService.getDeployedEmployees();
-         System.out.println("Found " + employees.size() + " deployed employees");
          return ResponseEntity.ok(employees);
      }
 
