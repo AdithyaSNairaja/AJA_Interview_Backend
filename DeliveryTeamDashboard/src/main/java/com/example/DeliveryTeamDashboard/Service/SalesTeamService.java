@@ -91,6 +91,10 @@ public class SalesTeamService {
     }
 
     public ClientInterview updateClientInterview(Long interviewId, String result, String feedback, Integer technicalScore, Integer communicationScore, Boolean deployedStatus) {
+        return updateClientInterview(interviewId, result, feedback, technicalScore, communicationScore, deployedStatus, null);
+    }
+
+    public ClientInterview updateClientInterview(Long interviewId, String result, String feedback, Integer technicalScore, Integer communicationScore, Boolean deployedStatus, MultipartFile file) {
         ClientInterview interview = clientInterviewRepository.findById(interviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
         interview.setResult(result);
@@ -98,7 +102,6 @@ public class SalesTeamService {
         interview.setTechnicalScore(technicalScore);
         interview.setCommunicationScore(communicationScore);
         interview.setStatus("completed");
-        
         if ("pass".equalsIgnoreCase(result) && (deployedStatus == null || !deployedStatus)) {
             Integer currentLevel = interview.getLevel();
             if (currentLevel != null) {
@@ -107,7 +110,6 @@ public class SalesTeamService {
                 interview.setLevel(1); // Default to level 1 if null
             }
         }
-        
         if (deployedStatus != null) {
             interview.setDeployedStatus(deployedStatus);
             if (deployedStatus) {
@@ -119,7 +121,6 @@ public class SalesTeamService {
             }
         }
         ClientInterview savedInterview = clientInterviewRepository.save(interview);
-
         try {
             Employee employee = interview.getEmployee();
             if (employee != null && employee.getUser() != null) {
@@ -128,24 +129,29 @@ public class SalesTeamService {
                 String client = interview.getClient();
                 LocalDate date = interview.getDate();
                 LocalTime time = interview.getTime();
-
-                emailService.sendClientInterviewFeedbackNotification(
-                    employeeEmail,
-                    employeeName,
-                    client,
-                    date,
-                    time,
-                    result,
-                    feedback,
-                    technicalScore,
-                    communicationScore,
-                    interview.getLevel()
-                );
+                String subject = "Client Interview Feedback";
+                String body = String.format("Dear %s,\n\nYour client interview feedback for %s on %s at %s:\nResult: %s\nFeedback: %s\nTechnical Score: %d\nCommunication Score: %d\nLevel: %d\n\nBest regards,\nSales Team",
+                        employeeName, client, date, time, result, feedback, technicalScore, communicationScore, interview.getLevel());
+                if (file != null && !file.isEmpty()) {
+                    emailService.sendEmailWithAttachment(employeeEmail, subject, body, file);
+                } else {
+                    emailService.sendClientInterviewFeedbackNotification(
+                        employeeEmail,
+                        employeeName,
+                        client,
+                        date,
+                        time,
+                        result,
+                        feedback,
+                        technicalScore,
+                        communicationScore,
+                        interview.getLevel()
+                    );
+                }
             }
         } catch (MessagingException e) {
             System.err.println("Failed to send client interview feedback email notification: " + e.getMessage());
         }
-
         return savedInterview;
     }
 

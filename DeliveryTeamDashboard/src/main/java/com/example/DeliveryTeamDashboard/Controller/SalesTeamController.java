@@ -40,6 +40,8 @@ import com.example.DeliveryTeamDashboard.Service.EmailService;
 import com.example.DeliveryTeamDashboard.Service.SalesTeamService;
 import com.example.DeliveryTeamDashboard.Service.SalesTeamService.ClientInterviewSchedule;
 
+import jakarta.mail.MessagingException;
+
 @RestController
 @RequestMapping("/api/sales")
 
@@ -119,44 +121,38 @@ public class SalesTeamController {
 
 	@PutMapping("/client-interviews/{interviewId}")
 	@PreAuthorize("hasRole('SALES')")
-		public ResponseEntity<?> updateClientInterview(
-				Authentication authentication,
-				@PathVariable Long interviewId,
-				@RequestBody Map<String, Object> requestBody) {
-			if (authentication == null || !authentication.isAuthenticated()) {
-				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
-			}
-			try {
-				String result = (String) requestBody.get("result");
-				String feedback = (String) requestBody.get("feedback");
-				Integer technicalScore = requestBody.get("technicalScore") != null ? ((Number) requestBody.get("technicalScore")).intValue() : null;
-				Integer communicationScore = requestBody.get("communicationScore") != null ? ((Number) requestBody.get("communicationScore")).intValue() : null;
-				Boolean deployedStatus = (Boolean) requestBody.get("deployedStatus");
-
-				if (result == null || feedback == null || technicalScore == null || communicationScore == null) {
-					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All required fields (result, feedback, technicalScore, communicationScore) are missing.");
-				}
-
-				ClientInterview interview = salesTeamService.updateClientInterview(interviewId, result, feedback, technicalScore, communicationScore, deployedStatus);
-				
-				// Create response with updated interview details
-				Map<String, Object> response = new java.util.HashMap<>();
-				response.put("id", interview.getId());
-				response.put("result", interview.getResult());
-				response.put("feedback", interview.getFeedback());
-				response.put("technicalScore", interview.getTechnicalScore());
-				response.put("communicationScore", interview.getCommunicationScore());
-				response.put("deployedStatus", interview.getDeployedStatus());
-				response.put("level", interview.getLevel());
-				response.put("status", interview.getStatus());
-
-				return ResponseEntity.ok(response);
-			} catch (IllegalArgumentException e) {
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-			} catch (ClassCastException e) {
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid data types in request: " + e.getMessage());
-			}
+	public ResponseEntity<?> updateClientInterview(
+			Authentication authentication,
+			@PathVariable Long interviewId,
+			@RequestParam String result,
+			@RequestParam String feedback,
+			@RequestParam Integer technicalScore,
+			@RequestParam Integer communicationScore,
+			@RequestParam(required = false) Boolean deployedStatus,
+			@RequestParam(required = false) MultipartFile file) {
+		if (authentication == null || !authentication.isAuthenticated()) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
 		}
+		try {
+			if (result == null || feedback == null || technicalScore == null || communicationScore == null) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All required fields (result, feedback, technicalScore, communicationScore) are missing.");
+			}
+			ClientInterview interview = salesTeamService.updateClientInterview(interviewId, result, feedback, technicalScore, communicationScore, deployedStatus, file);
+			// Create response with updated interview details
+			Map<String, Object> response = new java.util.HashMap<>();
+			response.put("id", interview.getId());
+			response.put("result", interview.getResult());
+			response.put("feedback", interview.getFeedback());
+			response.put("technicalScore", interview.getTechnicalScore());
+			response.put("communicationScore", interview.getCommunicationScore());
+			response.put("deployedStatus", interview.getDeployedStatus());
+			response.put("level", interview.getLevel());
+			response.put("status", interview.getStatus());
+			return ResponseEntity.ok(response);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
+	}
 
 		
 		@GetMapping("/client-interviews")

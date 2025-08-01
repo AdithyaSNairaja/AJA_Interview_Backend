@@ -61,7 +61,7 @@ public class EmailService {
 		if (fileUrls != null && !fileUrls.isEmpty()) {
 			fileLinks.append("<p><strong>Attached Files:</strong></p><ul>");
 			for (String url : fileUrls) {
-				fileLinks.append("<li><a href=	'").append(url).append("'>Download File</a></li>");
+				fileLinks.append("<li><a href='").append(url).append("'>Download File</a></li>");
 			}
 			fileLinks.append("</ul>");
 		}
