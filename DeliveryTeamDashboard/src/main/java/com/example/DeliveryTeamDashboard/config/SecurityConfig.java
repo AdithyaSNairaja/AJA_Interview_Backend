@@ -59,7 +59,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**","/api/delivery/mock-interviews/performance","/api/employee/resumes/{resumeId}/download","/api/employee/resumes/employee/{employeeId}/download","/api/sales/employees/deployed").permitAll()
+                .requestMatchers("/api/auth/**","/api/delivery/mock-interviews/performance","/api/employee/resumes/{resumeId}/download","/api/employee/resumes/employee/{employeeId}/download","/api/sales/employees/deployed","/api/employee/{employeeId}").permitAll()
                 .requestMatchers("/api/employee/**").hasAnyRole("EMPLOYEE", "DELIVERY","SALES")
                 .requestMatchers("/api/delivery/**").hasAuthority("ROLE_DELIVERY")
                 .requestMatchers("/api/sales/**").hasRole("SALES")
