@@ -331,6 +331,7 @@ public class SalesTeamController {
 
 
 		@GetMapping("/employees/deployed")
+		@PreAuthorize("hasAnyRole('SALES_TEAM', 'ADMIN', 'EMPLOYEE')")
 		public ResponseEntity<List<Employee>> getDeployedEmployees() {
 			List<Employee> deployedEmployees = salesTeamService.getDeployedEmployees();
 			return ResponseEntity.ok(deployedEmployees);
