@@ -127,7 +127,7 @@ public class SalesTeamController {
 	}
 
 	@PutMapping("/client-interviews/{interviewId}")
-	@PreAuthorize("hasRole('SALES_TEAM')")
+	@PreAuthorize("hasAnyRole('SALES_TEAM', 'ADMIN')")
 		public ResponseEntity<?> updateClientInterview(
 				Authentication authentication,
 				@PathVariable Long interviewId,
@@ -138,8 +138,16 @@ public class SalesTeamController {
 				@RequestParam(required = false) Boolean deployedStatus,
 				@RequestParam(required = false) MultipartFile file) throws IOException {
 			if (authentication == null || !authentication.isAuthenticated()) {
+				logger.error("Unauthorized access attempt to update client interview. Authentication: {}", authentication);
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
 			}
+			
+			// Log authentication details for debugging
+			logger.info("Update client interview request - User: {}, Authorities: {}, Interview ID: {}", 
+				authentication.getName(), 
+				authentication.getAuthorities(), 
+				interviewId);
+			
 			try {
 				if (result == null || feedback == null || technicalScore == null || communicationScore == null) {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All required fields (result, feedback, technicalScore, communicationScore) are missing.");
@@ -159,12 +167,17 @@ public class SalesTeamController {
 				response.put("status", interview.getStatus());
 				response.put("feedbackFileS3Key", interview.getFeedbackFileS3Key());
 
+				logger.info("Successfully updated client interview ID: {} by user: {}", interviewId, authentication.getName());
 				return ResponseEntity.ok(response);
 			} catch (IllegalArgumentException e) {
+				logger.error("Bad request for interview update - Interview ID: {}, Error: {}", interviewId, e.getMessage());
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 			} catch (IOException e) {
-				logger.error("Failed to process file upload: {}", e.getMessage(), e);
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to process file upload: " + e.getMessage());
+				logger.error("IO error during interview update - Interview ID: {}, Error: {}", interviewId, e.getMessage());
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("File processing error: " + e.getMessage());
+			} catch (Exception e) {
+				logger.error("Unexpected error during interview update - Interview ID: {}, Error: {}", interviewId, e.getMessage(), e);
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
 			}
 		}
 

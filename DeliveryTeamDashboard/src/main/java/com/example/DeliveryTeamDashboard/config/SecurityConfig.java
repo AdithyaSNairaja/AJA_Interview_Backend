@@ -66,7 +66,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/delivery/interviews/completed").hasAnyRole("EMPLOYEE", "DELIVERY_TEAM","SALES_TEAM")
                 .requestMatchers("/api/delivery/profile-picture/**").hasAnyRole("EMPLOYEE", "DELIVERY_TEAM","SALES_TEAM")
                 .requestMatchers("/api/delivery/**").hasAuthority("ROLE_DELIVERY_TEAM")
-                .requestMatchers("/api/sales/**").hasAuthority("ROLE_SALES_TEAM")
+                .requestMatchers("/api/sales/**").hasAnyAuthority("ROLE_SALES_TEAM", "ROLE_ADMIN")
                 .requestMatchers("/api/interviews/**").hasAnyRole("SALES_TEAM", "DELIVERY_TEAM")
                 .anyRequest().authenticated()
             )

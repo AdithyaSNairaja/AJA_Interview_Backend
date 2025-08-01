@@ -1,8 +1,10 @@
 package com.example.DeliveryTeamDashboard.config;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -69,13 +71,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             String email = jwtUtil.extractEmail(token);
+            String role = jwtUtil.extractRole(token);
+            
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 if (jwtUtil.isTokenValid(token, email)) {
+                    // Create authentication with role from JWT token
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
+                            email,
                             null,
-                            userDetails.getAuthorities());
+                            Collections.singletonList(new SimpleGrantedAuthority(role))
+                    );
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
