@@ -243,9 +243,9 @@ public class DeliveryTeamService {
 		return mockInterviewRepository.save(interview);
 	}
 
-	public User updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
+	public Employee updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
 		if (employeeId == null) {
-			throw new IllegalArgumentException("User ID cannot be null");
+			throw new IllegalArgumentException("Employee ID cannot be null");
 		}
 		if (file == null || file.isEmpty()) {
 			throw new IllegalArgumentException("Profile picture file cannot be null or empty");
@@ -255,29 +255,29 @@ public class DeliveryTeamService {
 			throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
 		}
 
-		User user = userRepository.findById(employeeId)
-				.orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+		Employee employee = employeeRepository.findById(employeeId)
+				.orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
 
 		// Delete existing profile picture from S3 if it exists
-		if (user.getProfilePicS3Key() != null) {
-			s3Service.deleteFile(user.getProfilePicS3Key());
+		if (employee.getProfilePicS3Key() != null) {
+			s3Service.deleteFile(employee.getProfilePicS3Key());
 		}
 
 		String s3Key = s3Service.uploadFile(file, "profile-pictures");
-		user.setProfilePicS3Key(s3Key);
-		return userRepository.save(user);
+		employee.setProfilePicS3Key(s3Key);
+		return employeeRepository.save(employee);
 	}
 
 	public byte[] getProfilePicture(Long employeeId) throws IOException {
 		if (employeeId == null) {
 			throw new IllegalArgumentException("Employee ID cannot be null");
 		}
-		User user = userRepository.findById(employeeId)
-				.orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
-		if (user.getProfilePicS3Key() == null) {
+		Employee employee = employeeRepository.findById(employeeId)
+				.orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
+		if (employee.getProfilePicS3Key() == null) {
 			throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
 		}
-		return s3Service.downloadFile(user.getProfilePicS3Key());
+		return s3Service.downloadFile(employee.getProfilePicS3Key());
 	}
 
 	public List<Map<String, Object>> getMockInterviewPerformance() {

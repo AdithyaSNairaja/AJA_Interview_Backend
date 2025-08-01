@@ -60,4 +60,7 @@ public class ClientInterview {
 	    
 	    @Column(name = "deployed_status")
 	    private Boolean deployedStatus;
+	    
+	    @Column(name = "feedback_file_s3_key")
+	    private String feedbackFileS3Key;
 }

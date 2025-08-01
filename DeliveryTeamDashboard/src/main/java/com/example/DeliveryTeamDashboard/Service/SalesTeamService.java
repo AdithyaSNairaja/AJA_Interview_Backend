@@ -83,7 +83,7 @@ public class SalesTeamService {
         
     }
 
-    public ClientInterview updateClientInterview(Long interviewId, String result, String feedback, Integer technicalScore, Integer communicationScore, Boolean deployedStatus) {
+    public ClientInterview updateClientInterview(Long interviewId, String result, String feedback, Integer technicalScore, Integer communicationScore, Boolean deployedStatus, MultipartFile file) throws IOException {
         ClientInterview interview = clientInterviewRepository.findById(interviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
         interview.setResult(result);
@@ -91,6 +91,23 @@ public class SalesTeamService {
         interview.setTechnicalScore(technicalScore);
         interview.setCommunicationScore(communicationScore);
         interview.setStatus("completed");
+        
+        // Handle file upload if provided
+        if (file != null && !file.isEmpty()) {
+            // Delete existing feedback file from S3 if it exists
+            if (interview.getFeedbackFileS3Key() != null) {
+                try {
+                    s3Service.deleteFile(interview.getFeedbackFileS3Key());
+                } catch (Exception e) {
+                    // Log error but don't fail the update
+                    System.err.println("Failed to delete existing feedback file: " + e.getMessage());
+                }
+            }
+            
+            // Upload new file to S3
+            String s3Key = s3Service.uploadFile(file, "client-interview-feedback");
+            interview.setFeedbackFileS3Key(s3Key);
+        }
         
         if ("pass".equalsIgnoreCase(result) && (deployedStatus == null || !deployedStatus)) {
             Integer currentLevel = interview.getLevel();
@@ -194,6 +211,15 @@ public class SalesTeamService {
             throw new IllegalArgumentException("No file associated with this Job Description");
         }
         return s3Service.downloadFile(jd.getS3Key());
+    }
+
+    public byte[] downloadFeedbackFile(Long interviewId) throws IOException {
+        ClientInterview interview = clientInterviewRepository.findById(interviewId)
+                .orElseThrow(() -> new IllegalArgumentException("Interview not found with ID: " + interviewId));
+        if (interview.getFeedbackFileS3Key() == null) {
+            throw new IllegalArgumentException("No feedback file associated with this interview");
+        }
+        return s3Service.downloadFile(interview.getFeedbackFileS3Key());
     }
 
     public void deleteJobDescription(Long jdId) {
@@ -308,9 +334,9 @@ public class SalesTeamService {
             this.deployedStatus = deployedStatus;
         }
     }
-    	public User updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
+    	public Employee updateProfilePicture(Long employeeId, MultipartFile file) throws IOException {
 	        if (employeeId == null) {
-	            throw new IllegalArgumentException("User ID cannot be null");
+	            throw new IllegalArgumentException("Employee ID cannot be null");
 	        }
 	        if (file == null || file.isEmpty()) {
 	            throw new IllegalArgumentException("Profile picture file cannot be null or empty");
@@ -320,29 +346,29 @@ public class SalesTeamService {
 	            throw new IllegalArgumentException("Profile picture must be a JPEG (.jpg, .jpeg) or PNG (.png) file");
 	        }
 
-	        User user =userRepository.findById(employeeId)
-	                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
+	        Employee employee = employeeRepository.findById(employeeId)
+	                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
 
 	        // Delete existing profile picture from S3 if it exists
-	        if (user.getProfilePicS3Key() != null) {
-	            s3Service.deleteFile(user.getProfilePicS3Key());
+	        if (employee.getProfilePicS3Key() != null) {
+	            s3Service.deleteFile(employee.getProfilePicS3Key());
 	        }
 
 	        String s3Key = s3Service.uploadFile(file, "profile-pictures");
-	        user.setProfilePicS3Key(s3Key);
-	        return userRepository.save(user);
+	        employee.setProfilePicS3Key(s3Key);
+	        return employeeRepository.save(employee);
 	    }
 
 	    public byte[] getProfilePicture(Long employeeId) throws IOException {
 	        if (employeeId == null) {
 	            throw new IllegalArgumentException("Employee ID cannot be null");
 	        }
-	        User user = userRepository.findById(employeeId)
-	                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + employeeId));
-	        if (user.getProfilePicS3Key() == null) {
+	        Employee employee = employeeRepository.findById(employeeId)
+	                .orElseThrow(() -> new IllegalArgumentException("Employee not found with ID: " + employeeId));
+	        if (employee.getProfilePicS3Key() == null) {
 	            throw new IllegalArgumentException("No profile picture found for employee ID: " + employeeId);
 	        }
-	        return s3Service.downloadFile(user.getProfilePicS3Key());
+	        return s3Service.downloadFile(employee.getProfilePicS3Key());
 	    }
 
 	    

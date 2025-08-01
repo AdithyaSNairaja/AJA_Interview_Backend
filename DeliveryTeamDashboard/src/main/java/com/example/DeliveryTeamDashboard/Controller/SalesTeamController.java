@@ -73,7 +73,7 @@ public class SalesTeamController {
 	}
 
 	@PostMapping("/interviews/schedule")
-	@PreAuthorize("hasRole('SALES')")
+	@PreAuthorize("hasRole('SALES_TEAM')")
 	public ResponseEntity<?> scheduleInterview(
 			Authentication authentication,
 			@RequestParam String empId,
@@ -99,45 +99,53 @@ public class SalesTeamController {
 		if (!"client".equalsIgnoreCase(interviewType)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Sales team can only schedule client interviews");
 		}
-		if (client == null || level == null || jobDescriptionTitle == null || meetingLink == null || interviewerEmail == null || file == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Client, level, job description title, meeting link, interviewer email, and file are required for client interviews");
+		if (client == null || level == null || jobDescriptionTitle == null || meetingLink == null) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Client, level, job description title, and meeting link are required for client interviews");
 		}
 		try {
 			ClientInterview interview = salesTeamService.scheduleClientInterview(empId, client, date, time, level, jobDescriptionTitle, meetingLink, deployedStatus);
-			// Send file to interviewer email
-			String subject = "Client Interview Documents";
-			String body = String.format("Dear Interviewer,\n\nPlease find the attached file for the upcoming client interview with employee ID: %s.\n\nBest regards,\nSales Team", empId);
-			emailService.sendEmailWithAttachment(interviewerEmail, subject, body, file);
+			
+			// Send email notification if interviewerEmail is provided
+			if (interviewerEmail != null && file != null) {
+				try {
+					String subject = "Client Interview Documents";
+					String body = String.format("Dear Interviewer,\n\nPlease find the attached file for the upcoming client interview with employee ID: %s.\n\nBest regards,\nSales Team", empId);
+					emailService.sendEmailWithAttachment(interviewerEmail, subject, body, file);
+				} catch (Exception e) {
+					logger.error("Failed to send email with attachment: {}", e.getMessage(), e);
+					// Don't fail the interview scheduling if email fails
+				}
+			}
+			
 			return ResponseEntity.status(HttpStatus.CREATED).body(interview);
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 		} catch (Exception e) {
-			logger.error("Failed to send email with attachment: {}", e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send email with attachment: " + e.getMessage());
+			logger.error("Failed to schedule interview: {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to schedule interview: " + e.getMessage());
 		}
 	}
 
 	@PutMapping("/client-interviews/{interviewId}")
-	@PreAuthorize("hasRole('SALES')")
+	@PreAuthorize("hasRole('SALES_TEAM')")
 		public ResponseEntity<?> updateClientInterview(
 				Authentication authentication,
 				@PathVariable Long interviewId,
-				@RequestBody Map<String, Object> requestBody) {
+				@RequestParam String result,
+				@RequestParam String feedback,
+				@RequestParam Integer technicalScore,
+				@RequestParam Integer communicationScore,
+				@RequestParam(required = false) Boolean deployedStatus,
+				@RequestParam(required = false) MultipartFile file) throws IOException {
 			if (authentication == null || !authentication.isAuthenticated()) {
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
 			}
 			try {
-				String result = (String) requestBody.get("result");
-				String feedback = (String) requestBody.get("feedback");
-				Integer technicalScore = requestBody.get("technicalScore") != null ? ((Number) requestBody.get("technicalScore")).intValue() : null;
-				Integer communicationScore = requestBody.get("communicationScore") != null ? ((Number) requestBody.get("communicationScore")).intValue() : null;
-				Boolean deployedStatus = (Boolean) requestBody.get("deployedStatus");
-
 				if (result == null || feedback == null || technicalScore == null || communicationScore == null) {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("All required fields (result, feedback, technicalScore, communicationScore) are missing.");
 				}
 
-				ClientInterview interview = salesTeamService.updateClientInterview(interviewId, result, feedback, technicalScore, communicationScore, deployedStatus);
+				ClientInterview interview = salesTeamService.updateClientInterview(interviewId, result, feedback, technicalScore, communicationScore, deployedStatus, file);
 				
 				// Create response with updated interview details
 				Map<String, Object> response = new java.util.HashMap<>();
@@ -149,12 +157,14 @@ public class SalesTeamController {
 				response.put("deployedStatus", interview.getDeployedStatus());
 				response.put("level", interview.getLevel());
 				response.put("status", interview.getStatus());
+				response.put("feedbackFileS3Key", interview.getFeedbackFileS3Key());
 
 				return ResponseEntity.ok(response);
 			} catch (IllegalArgumentException e) {
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-			} catch (ClassCastException e) {
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid data types in request: " + e.getMessage());
+			} catch (IOException e) {
+				logger.error("Failed to process file upload: {}", e.getMessage(), e);
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to process file upload: " + e.getMessage());
 			}
 		}
 
@@ -166,7 +176,7 @@ public class SalesTeamController {
 		}
 
 	@PostMapping("/clients")
-	@PreAuthorize("hasRole('SALES')")
+	@PreAuthorize("hasRole('SALES_TEAM')")
 		public ResponseEntity<?> addClient(
 				Authentication authentication,
 				@RequestParam String name,
@@ -191,7 +201,7 @@ public class SalesTeamController {
 		}
 
 	@PostMapping("/job-descriptions")
-	@PreAuthorize("hasRole('SALES')")
+	@PreAuthorize("hasRole('SALES_TEAM')")
 		public ResponseEntity<?> addJobDescription(
 				Authentication authentication,
 				@RequestParam String title,
@@ -214,7 +224,7 @@ public class SalesTeamController {
 		}
 
 	@GetMapping("/job-descriptions")
-	@PreAuthorize("hasRole('SALES')")
+	@PreAuthorize("hasRole('SALES_TEAM')")
 		public List<JobDescription> getAllJobDescriptions() {
 			return salesTeamService.getAllJobDescriptions();
 		}
@@ -245,14 +255,14 @@ public class SalesTeamController {
 		}
 
 	@GetMapping("/resumes")
-	@PreAuthorize("hasRole('SALES') or hasRole('DELIVERY_TEAM')")
+	@PreAuthorize("hasRole('SALES_TEAM') or hasRole('DELIVERY_TEAM')")
 		public ResponseEntity<List<Employee>> getAllEmployeeResumes() {
 			List<Employee> employeesWithResumes = salesTeamService.getCandidates("all", "all", "all"); // Assuming getCandidates can fetch employees with resume info
 			return ResponseEntity.ok(employeesWithResumes);
 		}
 
 	@GetMapping("/resumes/filter")
-	@PreAuthorize("hasRole('SALES') or hasRole('DELIVERY_TEAM')")
+	@PreAuthorize("hasRole('SALES_TEAM') or hasRole('DELIVERY_TEAM')")
 		public ResponseEntity<List<Employee>> getFilteredResumes(
 				@RequestParam(required = false, defaultValue = "all") String technology,
 				@RequestParam(required = false, defaultValue = "all") String resourceType) {
@@ -269,7 +279,7 @@ public class SalesTeamController {
 
 //	    
 	@GetMapping("/client-interviews/{interviewId}/feedback")
-	@PreAuthorize("hasRole('SALES') or hasRole('DELIVERY_TEAM') or hasRole('EMPLOYEE')")
+	@PreAuthorize("hasRole('SALES_TEAM') or hasRole('DELIVERY_TEAM') or hasRole('EMPLOYEE')")
 		public ResponseEntity<?> getClientInterviewFeedback(@PathVariable Long interviewId) {
 			try {
 				ClientInterview interview = salesTeamService.getClientInterviewById(interviewId);
@@ -286,6 +296,22 @@ public class SalesTeamController {
 				feedbackDetails.put("level", interview.getLevel());
 				return ResponseEntity.ok(feedbackDetails);
 			} catch (IllegalArgumentException e) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+			}
+		}
+
+		@GetMapping("/client-interviews/{interviewId}/feedback-file")
+		@PreAuthorize("hasRole('SALES_TEAM') or hasRole('DELIVERY_TEAM') or hasRole('EMPLOYEE')")
+		public ResponseEntity<?> downloadFeedbackFile(@PathVariable Long interviewId) {
+			try {
+				byte[] fileData = salesTeamService.downloadFeedbackFile(interviewId);
+				ByteArrayResource resource = new ByteArrayResource(fileData);
+				return ResponseEntity.ok()
+						.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=feedback_file.pdf")
+						.contentType(MediaType.APPLICATION_OCTET_STREAM)
+						.contentLength(fileData.length)
+						.body(resource);
+			} catch (IllegalArgumentException | IOException e) {
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 			}
 		}
@@ -334,8 +360,8 @@ public class SalesTeamController {
 				 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
 			 }
 			 try {
-				 User user = salesTeamService.updateProfilePicture(Id, file);
-				 return ResponseEntity.status(HttpStatus.OK).body(user);
+				 Employee employee = salesTeamService.updateProfilePicture(Id, file);
+				 return ResponseEntity.status(HttpStatus.OK).body(employee);
 			 } catch (IllegalArgumentException | IOException e) {
 				 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 			 }
